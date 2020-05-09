@@ -361,7 +361,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
 				.append("\n")
 				.append(ChatColorType.NORMAL)
-				.append(" Post Screech - ")
+				.append("Post Screech - ")
 				.append(Color.RED, DMG_FORMAT.format(xarpusPostScreech))
 				.append("\n")
 				.append("Total Healed - ")
