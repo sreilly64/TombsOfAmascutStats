@@ -84,7 +84,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private static final String NYLOCAS_WAVE = "Wave 'The Nylocas' complete!";
 	private static final String SOTETSEG_WAVE = "Wave 'Sotetseg' complete!";
 	private static final String XARPUS_WAVE = "Wave 'Xarpus' complete!";
-	private static final String VERZIK_WAVE = "Your completed Theatre of Blood count is:";
+	private static final String VERZIK_WAVE = "Wave 'The Final Challenge' complete!";
 	private static final Set<Integer> NYLOCAS_IDS = ImmutableSet.of(
 		NpcID.NYLOCAS_HAGIOS, NpcID.NYLOCAS_HAGIOS_8347, NpcID.NYLOCAS_HAGIOS_8350, NpcID.NYLOCAS_HAGIOS_8353,
 		NpcID.NYLOCAS_TOXOBOLOS, NpcID.NYLOCAS_TOXOBOLOS_8343, NpcID.NYLOCAS_TOXOBOLOS_8346,
@@ -222,7 +222,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		}
 
 		int bosshp = client.getVarbitValue(THEATRE_OF_BLOOD_BOSS_HP);
-
 		switch (region)
 		{
 			case MAIDEN_REGION:
@@ -282,13 +281,11 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("50% - ")
-				.append(Color.RED, formatTime(maiden50time))
-				.append(" (" + formatTime(maiden50time - maiden70time) + ")")
+				.append(Color.RED, formatTime(maiden50time) + " (" + formatTime(maiden50time - maiden70time) + ")")
 				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("30% - ")
-				.append(Color.RED, formatTime(maiden30time))
-				.append(" (" + formatTime(maiden30time - maiden50time) + ")")
+				.append(Color.RED, formatTime(maiden30time) + " (" + formatTime(maiden30time - maiden50time) + ")")
 				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("Personal Boss Damage - ")
@@ -326,13 +323,11 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("Cleanup - ")
-				.append(Color.RED, formatTime(cleanupTime))
-				.append(" (" + formatTime(cleanupTime - waveTime) + ")")
+				.append(Color.RED, formatTime(cleanupTime) + " (" + formatTime(cleanupTime - waveTime) + ")")
 				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("Boss Spawn - ")
-				.append(Color.RED, formatTime(bossSpawnTime))
-				.append(" (" + formatTime(bossSpawnTime - cleanupTime) + ")")
+				.append(Color.RED, formatTime(bossSpawnTime) + " (" + formatTime(bossSpawnTime - cleanupTime) + ")")
 				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("Personal Boss Damage - ")
@@ -353,8 +348,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("33% - ")
-				.append(Color.RED, formatTime(sote33time))
-				.append(" (" + formatTime(sote33time - sote66time) + ")")
+				.append(Color.RED, formatTime(sote33time) + " (" + formatTime(sote33time - sote66time) + ")")
 				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("Personal Boss Damage - ")
@@ -370,6 +364,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double percent = (personal / total) * 100;
 
 			message = new ChatMessageBuilder()
+				.append(ChatColorType.NORMAL)
 				.append("Personal Boss Damage - ")
 				.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
 				.append("\n")
@@ -389,8 +384,8 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			message = new ChatMessageBuilder()
 				.append(ChatColorType.NORMAL)
 				.append("P3 - ")
-				.append(Color.RED, formatTime(verzikP3time))
-				.append(" (" + formatTime(verzikP3time - verzikP2time) + ")")
+				.append(Color.RED, formatTime(verzikP3time) + " (" + formatTime(verzikP3time - verzikP2time) + ")")
+				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("P3 Personal Damage - ")
 				.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
@@ -464,8 +459,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				String message = new ChatMessageBuilder()
 					.append(ChatColorType.NORMAL)
 					.append("P2 - ")
-					.append(Color.RED, formatTime(verzikP2time))
-					.append(" (" + formatTime(verzikP2time - verzikP1time) + ")")
+					.append(Color.RED, formatTime(verzikP2time) + " (" + formatTime(verzikP2time - verzikP1time) + ")")
 					.append("\n")
 					.append(ChatColorType.NORMAL)
 					.append("P2 Personal Damage - ")
@@ -484,10 +478,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 						.build());
 				}
 				break;
-			}
-			case NpcID.VERZIK_VITUR_8375:
-			{
-				verzikP3time = client.getTickCount() - verzikStartTick;
 			}
 		}
 
@@ -523,6 +513,11 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		}
 
 		int id = event.getNpc().getId();
+		if (id == NpcID.VERZIK_VITUR_8374)
+		{
+			verzikP3time = client.getTickCount() - verzikStartTick;
+		}
+
 		if (!NYLOCAS_IDS.contains(id) || prevRegion != NYLOCAS_REGION)
 		{
 			return;
@@ -633,14 +628,11 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			String message = new ChatMessageBuilder()
 				.append(ChatColorType.NORMAL)
 				.append("Screech Time - ")
-				.append(Color.RED, formatTime(xarpusAcidTime))
-				.append(" (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")")
+				.append(Color.RED, formatTime(xarpusAcidTime) + " (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")")
 				.append("\n")
 				.append(ChatColorType.NORMAL)
 				.append("Pre Screech Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(xarpusPreScreech))
-				.append(ChatColorType.NORMAL)
-				.append(" (" + DECIMAL_FORMAT.format(percent) + ")")
+				.append(Color.RED, DMG_FORMAT.format(xarpusPreScreech) + " (" + DECIMAL_FORMAT.format(percent) + ")")
 				.build();
 
 			if (message != null)
@@ -721,7 +713,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		verzikStartTick = -1;
 		verzikP1time = 0;
 		verzikP2time = 0;
-		verzikP3time = 0;
 		verzikP1personal = 0;
 		verzikP1total = 0;
 		verzikP2personal = 0;
