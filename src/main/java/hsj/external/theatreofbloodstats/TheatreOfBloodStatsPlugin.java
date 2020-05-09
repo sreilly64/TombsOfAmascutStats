@@ -84,7 +84,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private static final String NYLOCAS_WAVE = "Wave 'The Nylocas' complete!";
 	private static final String SOTETSEG_WAVE = "Wave 'Sotetseg' complete!";
 	private static final String XARPUS_WAVE = "Wave 'Xarpus' complete!";
-	private static final String VERZIK_WAVE = "Wave 'The Final Challenge' complete!";
 	private static final Set<Integer> NYLOCAS_IDS = ImmutableSet.of(
 		NpcID.NYLOCAS_HAGIOS, NpcID.NYLOCAS_HAGIOS_8347, NpcID.NYLOCAS_HAGIOS_8350, NpcID.NYLOCAS_HAGIOS_8353,
 		NpcID.NYLOCAS_TOXOBOLOS, NpcID.NYLOCAS_TOXOBOLOS_8343, NpcID.NYLOCAS_TOXOBOLOS_8346,
@@ -141,7 +140,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private int verzikStartTick = -1;
 	private int verzikP1time;
 	private int verzikP2time;
-	private int verzikP3time;
 	private double verzikP1personal;
 	private double verzikP1total;
 	private double verzikP2personal;
@@ -374,28 +372,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				.build();
 			resetXarpus();
 		}
-		else if (strippedMessage.startsWith(VERZIK_WAVE))
-		{
-			double p3personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
-			double p3total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
-			double p3healed = totalHealing.getOrDefault("Verzik Vitur", 0) - verzikP2healed;
-			double percent = (p3personal / p3total) * 100;
-
-			message = new ChatMessageBuilder()
-				.append(ChatColorType.NORMAL)
-				.append("P3 - ")
-				.append(Color.RED, formatTime(verzikP3time) + " (" + formatTime(verzikP3time - verzikP2time) + ")")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("P3 Personal Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("P3 Healed - ")
-				.append(Color.RED, DMG_FORMAT.format(p3healed))
-				.build();
-			resetVerzik();
-		}
 
 		if (message != null)
 		{
@@ -479,6 +455,32 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				}
 				break;
 			}
+			case NpcID.VERZIK_VITUR_8375:
+			{
+				double p3personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
+				double p3total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
+				double p3healed = totalHealing.getOrDefault("Verzik Vitur", 0) - verzikP2healed;
+				double percent = (p3personal / p3total) * 100;
+
+				String message = new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("P3 Personal Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+					.append("\n")
+					.append(ChatColorType.NORMAL)
+					.append("P3 Healed - ")
+					.append(Color.RED, DMG_FORMAT.format(p3healed))
+					.build();
+				resetVerzik();
+
+				if (message != null)
+				{
+					chatMessageManager.queue(QueuedMessage.builder()
+						.type(ChatMessageType.GAMEMESSAGE)
+						.runeLiteFormattedMessage(message)
+						.build());
+				}
+			}
 		}
 
 		if (!NYLOCAS_IDS.contains(npcId) || prevRegion != NYLOCAS_REGION)
@@ -513,11 +515,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		}
 
 		int id = event.getNpc().getId();
-		if (id == NpcID.VERZIK_VITUR_8374)
-		{
-			verzikP3time = client.getTickCount() - verzikStartTick;
-		}
-
 		if (!NYLOCAS_IDS.contains(id) || prevRegion != NYLOCAS_REGION)
 		{
 			return;
