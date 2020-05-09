@@ -189,6 +189,22 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				if (region == XARPUS_REGION && xarpusStartTick != -1 && xarpusRecoveryTime < 1)
 				{
 					xarpusRecoveryTime = client.getTickCount() - xarpusStartTick;
+					String message = new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Recovery Phase - ")
+						.append(Color.RED, formatTime(xarpusRecoveryTime))
+						.append("\n")
+						.append("Total Healed - ")
+						.append(Color.RED, DMG_FORMAT.format(totalHealing.getOrDefault("Xarpus", 0)))
+						.build();
+
+					if (message != null)
+					{
+						chatMessageManager.queue(QueuedMessage.builder()
+							.type(ChatMessageType.GAMEMESSAGE)
+							.runeLiteFormattedMessage(message)
+							.build());
+					}
 				}
 				break;
 			case 2:
@@ -350,29 +366,16 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		{
 			double personal = personalDamage.getOrDefault("Xarpus", 0);
 			double total = totalDamage.getOrDefault("Xarpus", 0);
-			int healed = totalHealing.getOrDefault("Xarpus", 0);
 			double xarpusPostScreech = personal - xarpusPreScreech;
 			double percent = (personal / total) * 100;
 
 			message = new ChatMessageBuilder()
-				.append(ChatColorType.NORMAL)
-				.append("Recovery Phase - ")
-				.append(Color.RED, formatTime(xarpusRecoveryTime))
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("Acid Phase - ")
-				.append(Color.RED, formatTime(xarpusAcidTime))
-				.append(" (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")")
-				.append("\n")
 				.append("Personal Boss Damage - ")
 				.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
 				.append("\n")
 				.append(ChatColorType.NORMAL)
-				.append("Post Screech - ")
+				.append("Post Screech Damage - ")
 				.append(Color.RED, DMG_FORMAT.format(xarpusPostScreech))
-				.append("\n")
-				.append("Total Healed - ")
-				.append(Color.RED, DMG_FORMAT.format(healed))
 				.build();
 			resetXarpus();
 		}
@@ -629,7 +632,12 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 
 			String message = new ChatMessageBuilder()
 				.append(ChatColorType.NORMAL)
-				.append("Pre Screech - ")
+				.append("Screech Time - ")
+				.append(Color.RED, formatTime(xarpusAcidTime))
+				.append(" (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")")
+				.append("\n")
+				.append(ChatColorType.NORMAL)
+				.append("Pre Screech Damage - ")
 				.append(Color.RED, DMG_FORMAT.format(xarpusPreScreech))
 				.append(ChatColorType.NORMAL)
 				.append(" (" + DECIMAL_FORMAT.format(percent) + ")")
