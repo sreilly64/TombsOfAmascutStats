@@ -45,6 +45,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.HitsplatApplied;
+import net.runelite.api.events.NpcChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.OverheadTextChanged;
@@ -67,7 +68,7 @@ import net.runelite.client.util.Text;
 public class TheatreOfBloodStatsPlugin extends Plugin
 {
 	private static final DecimalFormat DMG_FORMAT = new DecimalFormat("#,###");
-	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("###.##");
+	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("###.00");
 	private static final int THEATRE_OF_BLOOD_ROOM_STATUS = 6447;
 	private static final int THEATRE_OF_BLOOD_BOSS_HP = 6448;
 	private static final int MAIDEN_REGION = 12613;
@@ -383,6 +384,45 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onNpcChanged(NpcChanged event)
+	{
+		if (!tobInside)
+		{
+			return;
+		}
+
+		NPC npc = event.getNpc();
+		int npcId = npc.getId();
+
+		if (npcId == NpcID.VERZIK_VITUR_8375)
+		{
+			double p3personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
+			double p3total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
+			double p3healed = totalHealing.getOrDefault("Verzik Vitur", 0) - verzikP2healed;
+			double percent = (p3personal / p3total) * 100;
+
+			String message = new ChatMessageBuilder()
+				.append(ChatColorType.NORMAL)
+				.append("P3 Personal Damage - ")
+				.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+				.append("\n")
+				.append(ChatColorType.NORMAL)
+				.append("P3 Healed - ")
+				.append(Color.RED, DMG_FORMAT.format(p3healed))
+				.build();
+			resetVerzik();
+
+			if (message != null)
+			{
+				chatMessageManager.queue(QueuedMessage.builder()
+					.type(ChatMessageType.GAMEMESSAGE)
+					.runeLiteFormattedMessage(message)
+					.build());
+			}
+		}
+	}
+
+	@Subscribe
 	public void onNpcSpawned(NpcSpawned event)
 	{
 		if (!tobInside)
@@ -454,32 +494,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 						.build());
 				}
 				break;
-			}
-			case NpcID.VERZIK_VITUR_8375:
-			{
-				double p3personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
-				double p3total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
-				double p3healed = totalHealing.getOrDefault("Verzik Vitur", 0) - verzikP2healed;
-				double percent = (p3personal / p3total) * 100;
-
-				String message = new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("P3 Personal Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-					.append("\n")
-					.append(ChatColorType.NORMAL)
-					.append("P3 Healed - ")
-					.append(Color.RED, DMG_FORMAT.format(p3healed))
-					.build();
-				resetVerzik();
-
-				if (message != null)
-				{
-					chatMessageManager.queue(QueuedMessage.builder()
-						.type(ChatMessageType.GAMEMESSAGE)
-						.runeLiteFormattedMessage(message)
-						.build());
-				}
 			}
 		}
 
