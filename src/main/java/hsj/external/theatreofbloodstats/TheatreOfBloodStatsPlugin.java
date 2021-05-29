@@ -27,7 +27,10 @@ package hsj.external.theatreofbloodstats;
 import com.google.common.collect.ImmutableSet;
 import java.awt.Color;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +42,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.NPC;
 import net.runelite.api.NpcID;
+import net.runelite.api.NullNpcID;
 import net.runelite.api.Point;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
@@ -75,9 +79,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private static final int NYLOCAS_REGION = 13122;
 	private static final int SOTETSEG_REGION = 13123;
 	private static final int SOTETSEG_MAZE_REGION = 13379;
-	private static final int XARPUS_REGION = 12612;
-	private static final int VERZIK_REGION = 12611;
-	private static final int EXHUMED_DELAY_TICKS = 16;
 	private static final int NYLOCAS_TOTAL = 120;
 	private static final int TICK_LENGTH = 600;
 	private static final String MAIDEN_WAVE = "Wave 'The Maiden of Sugadinti' complete!";
@@ -85,6 +86,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private static final String NYLOCAS_WAVE = "Wave 'The Nylocas' complete!";
 	private static final String SOTETSEG_WAVE = "Wave 'Sotetseg' complete!";
 	private static final String XARPUS_WAVE = "Wave 'Xarpus' complete!";
+	private static final String COMPLETION = "Theatre of Blood total completion time:";
 	private static final Set<Integer> NYLOCAS_IDS = ImmutableSet.of(
 		NpcID.NYLOCAS_HAGIOS, NpcID.NYLOCAS_HAGIOS_8347, NpcID.NYLOCAS_HAGIOS_8350, NpcID.NYLOCAS_HAGIOS_8353,
 		NpcID.NYLOCAS_TOXOBOLOS, NpcID.NYLOCAS_TOXOBOLOS_8343, NpcID.NYLOCAS_TOXOBOLOS_8346,
@@ -137,6 +139,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private int xarpusAcidTime;
 	private int xarpusRecoveryTime;
 	private int xarpusPreScreech;
+	private int xarpusPreScreechTotal;
 
 	private int verzikStartTick = -1;
 	private int verzikP1time;
@@ -164,60 +167,9 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		int region = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
 		int status = client.getVarbitValue(THEATRE_OF_BLOOD_ROOM_STATUS);
 
-		switch (status)
+		if (status == 1 && region != prevRegion && region != SOTETSEG_MAZE_REGION)
 		{
-			case 1:
-				if (region != prevRegion && region != SOTETSEG_MAZE_REGION)
-				{
-					prevRegion = region;
-
-					switch (region)
-					{
-						case MAIDEN_REGION:
-							maidenStartTick = client.getTickCount();
-							break;
-						case NYLOCAS_REGION:
-							nyloStartTick = client.getTickCount();
-							break;
-						case SOTETSEG_REGION:
-							soteStartTick = client.getTickCount();
-							break;
-					}
-				}
-
-				if (region == XARPUS_REGION && xarpusStartTick != -1 && xarpusRecoveryTime < 1)
-				{
-					xarpusRecoveryTime = client.getTickCount() - xarpusStartTick;
-					String message = new ChatMessageBuilder()
-						.append(ChatColorType.NORMAL)
-						.append("Recovery Phase - ")
-						.append(Color.RED, formatTime(xarpusRecoveryTime))
-						.append("\n")
-						.append("Total Healed - ")
-						.append(Color.RED, DMG_FORMAT.format(totalHealing.getOrDefault("Xarpus", 0)))
-						.build();
-
-					if (message != null)
-					{
-						chatMessageManager.queue(QueuedMessage.builder()
-							.type(ChatMessageType.GAMEMESSAGE)
-							.runeLiteFormattedMessage(message)
-							.build());
-					}
-				}
-				break;
-			case 2:
-				if (xarpusStartTick == -1 && region == XARPUS_REGION)
-				{
-					xarpusStartTick = client.getTickCount() - EXHUMED_DELAY_TICKS;
-				}
-				break;
-			case 3:
-				if (verzikStartTick == -1 && region == VERZIK_REGION)
-				{
-					verzikStartTick = client.getTickCount();
-				}
-				break;
+			prevRegion = region;
 		}
 
 		int bosshp = client.getVarbitValue(THEATRE_OF_BLOOD_BOSS_HP);
@@ -264,7 +216,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		}
 
 		String strippedMessage = Text.removeTags(event.getMessage());
-		String message = null;
+		List<String> messages = new ArrayList<>(Collections.emptyList());
 
 		if (strippedMessage.startsWith(MAIDEN_WAVE))
 		{
@@ -272,28 +224,55 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double total = totalDamage.getOrDefault("The Maiden of Sugadinti", 0);
 			int healed = totalHealing.getOrDefault("The Maiden of Sugadinti", 0);
 			double percent = (personal / total) * 100;
+			messages.clear();
 
-			message = new ChatMessageBuilder()
-				.append(ChatColorType.NORMAL)
-				.append("70% - ")
-				.append(Color.RED, formatTime(maiden70time))
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("50% - ")
-				.append(Color.RED, formatTime(maiden50time) + " (" + formatTime(maiden50time - maiden70time) + ")")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("30% - ")
-				.append(Color.RED, formatTime(maiden30time) + " (" + formatTime(maiden30time - maiden50time) + ")")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("Personal Boss Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("Total Healing - ")
-				.append(Color.RED, DMG_FORMAT.format(healed))
-				.build();
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("70% - ")
+					.append(Color.RED, formatTime(maiden70time))
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("50% - ")
+					.append(Color.RED, formatTime(maiden50time) + " (" + formatTime(maiden50time - maiden70time) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("30% - ")
+					.append(Color.RED, formatTime(maiden30time) + " (" + formatTime(maiden30time - maiden50time) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("0% - ")
+					.append(Color.RED, formatTime(client.getTickCount() - maidenStartTick) + " (" + formatTime((client.getTickCount() - maidenStartTick) - maiden30time) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Personal Boss Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Total Healing - ")
+					.append(Color.RED, DMG_FORMAT.format(healed))
+					.build()
+			);
 			resetMaiden();
 		}
 		else if (strippedMessage.startsWith(BLOAT_WAVE))
@@ -301,12 +280,15 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double personal = personalDamage.getOrDefault("Pestilent Bloat", 0);
 			double total = totalDamage.getOrDefault("Pestilent Bloat", 0);
 			double percent = (personal / total) * 100;
+			messages.clear();
 
-			message = new ChatMessageBuilder()
-				.append(ChatColorType.NORMAL)
-				.append("Personal Boss Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-				.build();
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Personal Boss Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+					.build()
+			);
 			resetBloat();
 		}
 		else if (strippedMessage.startsWith(NYLOCAS_WAVE))
@@ -314,24 +296,47 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double personal = personalDamage.getOrDefault("Nylocas Vasilias", 0);
 			double total = totalDamage.getOrDefault("Nylocas Vasilias", 0);
 			double percent = (personal / total) * 100;
+			messages.clear();
 
-			message = new ChatMessageBuilder()
-				.append(ChatColorType.NORMAL)
-				.append("Waves - ")
-				.append(Color.RED, formatTime(waveTime))
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("Cleanup - ")
-				.append(Color.RED, formatTime(cleanupTime) + " (" + formatTime(cleanupTime - waveTime) + ")")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("Boss Spawn - ")
-				.append(Color.RED, formatTime(bossSpawnTime) + " (" + formatTime(bossSpawnTime - cleanupTime) + ")")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("Personal Boss Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-				.build();
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Waves - ")
+					.append(Color.RED, formatTime(waveTime))
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Cleanup - ")
+					.append(Color.RED, formatTime(cleanupTime) + " (" + formatTime(cleanupTime - waveTime) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Boss Spawn - ")
+					.append(Color.RED, formatTime(bossSpawnTime) + " (" + formatTime(bossSpawnTime - cleanupTime) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Boss Death - ")
+					.append(Color.RED, formatTime(client.getTickCount() - nyloStartTick) + " (" + formatTime((client.getTickCount() - nyloStartTick) - bossSpawnTime) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Personal Boss Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+					.build()
+			);
 			resetNylo();
 		}
 		else if (strippedMessage.startsWith(SOTETSEG_WAVE))
@@ -339,20 +344,39 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double personal = personalDamage.getOrDefault("Sotetseg", 0);
 			double total = totalDamage.getOrDefault("Sotetseg", 0);
 			double percent = (personal / total) * 100;
+			messages.clear();
 
-			message = new ChatMessageBuilder()
-				.append(ChatColorType.NORMAL)
-				.append("66% - ")
-				.append(Color.RED, formatTime(sote66time))
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("33% - ")
-				.append(Color.RED, formatTime(sote33time) + " (" + formatTime(sote33time - sote66time) + ")")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("Personal Boss Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-				.build();
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("66% - ")
+					.append(Color.RED, formatTime(sote66time))
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("33% - ")
+					.append(Color.RED, formatTime(sote33time) + " (" + formatTime(sote33time - sote66time) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("0% - ")
+					.append(Color.RED, formatTime(client.getTickCount() - soteStartTick) + " (" + formatTime((client.getTickCount() - soteStartTick) - sote33time) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Personal Boss Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+					.build()
+			);
 			resetSote();
 		}
 		else if (strippedMessage.startsWith(XARPUS_WAVE))
@@ -360,26 +384,153 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double personal = personalDamage.getOrDefault("Xarpus", 0);
 			double total = totalDamage.getOrDefault("Xarpus", 0);
 			double xarpusPostScreech = personal - xarpusPreScreech;
-			double percent = (personal / total) * 100;
+			double personalPercent = (personal / total) * 100;
+			double preScreechPercent = ((double) xarpusPreScreech / (double) xarpusPreScreechTotal) * 100;
+			messages.clear();
 
-			message = new ChatMessageBuilder()
-				.append(ChatColorType.NORMAL)
-				.append("Personal Boss Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("Post Screech Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(xarpusPostScreech))
-				.build();
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Recovery Phase - ")
+					.append(Color.RED, formatTime(xarpusRecoveryTime))
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Screech Time - ")
+					.append(Color.RED, formatTime(xarpusAcidTime) + " (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Death Time - ")
+					.append(Color.RED, formatTime(client.getTickCount() - xarpusStartTick) + " (" + formatTime((client.getTickCount() - xarpusStartTick) - xarpusAcidTime) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Pre Screech Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(xarpusPreScreech) + " (" + DECIMAL_FORMAT.format(preScreechPercent) + "%)")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Post Screech Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(xarpusPostScreech))
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Personal Boss Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(personalPercent) + "%)")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("Total Healed - ")
+					.append(Color.RED, DMG_FORMAT.format(totalHealing.getOrDefault("Xarpus", 0)))
+					.build()
+			);
 			resetXarpus();
 		}
-
-		if (message != null)
+		else if (strippedMessage.startsWith(COMPLETION))
 		{
-			chatMessageManager.queue(QueuedMessage.builder()
-				.type(ChatMessageType.GAMEMESSAGE)
-				.runeLiteFormattedMessage(message)
-				.build());
+			double p3personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
+			double p3total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
+			double p3healed = totalHealing.getOrDefault("Verzik Vitur", 0) - verzikP2healed;
+			double p3percent = (p3personal / p3total) * 100;
+			double p1percent = (verzikP1personal / verzikP1total) * 100;
+			double p2percent = (verzikP2personal / verzikP2total) * 100;
+			messages.clear();
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("P1 - ")
+					.append(Color.RED, formatTime(verzikP1time))
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("P2 - ")
+					.append(Color.RED, formatTime(verzikP2time) + " (" + formatTime(verzikP2time - verzikP1time) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("P3 - ")
+					.append(Color.RED, formatTime(client.getTickCount() - verzikStartTick) + " (" + formatTime((client.getTickCount() - verzikStartTick) - verzikP2time) + ")")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("P1 Personal Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(verzikP1personal) + " (" + DECIMAL_FORMAT.format(p1percent) + "%)")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("P2 Personal Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(verzikP2personal) + " (" + DECIMAL_FORMAT.format(p2percent) + "%)")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("P3 Personal Damage - ")
+					.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(p3percent) + "%)")
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("P2 Healed - ")
+					.append(Color.RED, DMG_FORMAT.format(verzikP2healed))
+					.build()
+			);
+
+			messages.add(
+				new ChatMessageBuilder()
+					.append(ChatColorType.NORMAL)
+					.append("P3 Healed - ")
+					.append(Color.RED, DMG_FORMAT.format(p3healed))
+					.build()
+			);
+			resetVerzik();
+		}
+
+		if (!messages.isEmpty())
+		{
+			for(String m:messages)
+			{
+				chatMessageManager.queue(QueuedMessage.builder()
+					.type(ChatMessageType.GAMEMESSAGE)
+					.runeLiteFormattedMessage(m)
+					.build());
+			}
+			messages.clear();
 		}
 	}
 
@@ -394,31 +545,23 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		NPC npc = event.getNpc();
 		int npcId = npc.getId();
 
-		if (npcId == NpcID.VERZIK_VITUR_8375)
+		switch (npcId)
 		{
-			double p3personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
-			double p3total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
-			double p3healed = totalHealing.getOrDefault("Verzik Vitur", 0) - verzikP2healed;
-			double percent = (p3personal / p3total) * 100;
-
-			String message = new ChatMessageBuilder()
-				.append(ChatColorType.NORMAL)
-				.append("P3 Personal Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("P3 Healed - ")
-				.append(Color.RED, DMG_FORMAT.format(p3healed))
-				.build();
-			resetVerzik();
-
-			if (message != null)
-			{
-				chatMessageManager.queue(QueuedMessage.builder()
-					.type(ChatMessageType.GAMEMESSAGE)
-					.runeLiteFormattedMessage(message)
-					.build());
-			}
+			case NpcID.SOTETSEG_8388:
+				if (soteStartTick == -1)
+				{
+					soteStartTick = client.getTickCount();
+				}
+				break;
+			case NpcID.XARPUS_8339:
+				xarpusStartTick = client.getTickCount();
+				break;
+			case NpcID.XARPUS_8340:
+				xarpusRecoveryTime = client.getTickCount() - xarpusStartTick;
+				break;
+			case NpcID.VERZIK_VITUR_8370:
+				verzikStartTick = client.getTickCount();
+				break;
 		}
 	}
 
@@ -435,6 +578,12 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
+			case NpcID.THE_MAIDEN_OF_SUGADINTI:
+				maidenStartTick = client.getTickCount();
+				break;
+			case NullNpcID.NULL_8358:
+				nyloStartTick = client.getTickCount();
+				break;
 			case NpcID.NYLOCAS_VASILIAS:
 				bossSpawnTime = client.getTickCount() - nyloStartTick;
 				break;
@@ -443,25 +592,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				verzikP1time = client.getTickCount() - verzikStartTick;
 				verzikP1personal = personalDamage.getOrDefault("Verzik Vitur", 0);
 				verzikP1total = totalDamage.getOrDefault("Verzik Vitur", 0);
-				double percent = (verzikP1personal / verzikP1total) * 100;
-
-				String message = new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("P1 - ")
-					.append(Color.RED, formatTime(verzikP1time))
-					.append("\n")
-					.append(ChatColorType.NORMAL)
-					.append("P1 Personal Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(verzikP1personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-					.build();
-
-				if (message != null)
-				{
-					chatMessageManager.queue(QueuedMessage.builder()
-						.type(ChatMessageType.GAMEMESSAGE)
-						.runeLiteFormattedMessage(message)
-						.build());
-				}
 				break;
 			}
 			case NpcID.VERZIK_VITUR_8373:
@@ -470,29 +600,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				verzikP2personal = personalDamage.getOrDefault("Verzik Vitur", 0) - verzikP1personal;
 				verzikP2total = totalDamage.getOrDefault("Verzik Vitur", 0) - verzikP1total;
 				verzikP2healed = totalHealing.getOrDefault("Verzik Vitur", 0);
-				double percent = (verzikP2personal / verzikP2total) * 100;
-
-				String message = new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("P2 - ")
-					.append(Color.RED, formatTime(verzikP2time) + " (" + formatTime(verzikP2time - verzikP1time) + ")")
-					.append("\n")
-					.append(ChatColorType.NORMAL)
-					.append("P2 Personal Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(verzikP2personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-					.append("\n")
-					.append(ChatColorType.NORMAL)
-					.append("P2 Healed - ")
-					.append(Color.RED, DMG_FORMAT.format(verzikP2healed))
-					.build();
-
-				if (message != null)
-				{
-					chatMessageManager.queue(QueuedMessage.builder()
-						.type(ChatMessageType.GAMEMESSAGE)
-						.runeLiteFormattedMessage(message)
-						.build());
-				}
 				break;
 			}
 		}
@@ -528,8 +635,10 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			return;
 		}
 
-		int id = event.getNpc().getId();
-		if (!NYLOCAS_IDS.contains(id) || prevRegion != NYLOCAS_REGION)
+		NPC npc = event.getNpc();
+		int npcId = npc.getId();
+
+		if (!NYLOCAS_IDS.contains(npcId) || prevRegion != NYLOCAS_REGION)
 		{
 			return;
 		}
@@ -633,35 +742,18 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		{
 			xarpusAcidTime = client.getTickCount() - xarpusStartTick;
 			xarpusPreScreech = personalDamage.getOrDefault(npcName, 0);
-			double preScreechTotal = totalDamage.getOrDefault(npcName, 0);
-			double percent = (xarpusPreScreech / preScreechTotal) * 100;
-
-			String message = new ChatMessageBuilder()
-				.append(ChatColorType.NORMAL)
-				.append("Screech Time - ")
-				.append(Color.RED, formatTime(xarpusAcidTime) + " (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")")
-				.append("\n")
-				.append(ChatColorType.NORMAL)
-				.append("Pre Screech Damage - ")
-				.append(Color.RED, DMG_FORMAT.format(xarpusPreScreech) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-				.build();
-
-			if (message != null)
-			{
-				chatMessageManager.queue(QueuedMessage.builder()
-					.type(ChatMessageType.GAMEMESSAGE)
-					.runeLiteFormattedMessage(message)
-					.build());
-			}
+			xarpusPreScreechTotal = totalDamage.getOrDefault(npcName, 0);
 		}
 	}
 
 	private String formatTime(int ticks)
 	{
 		int millis = ticks * TICK_LENGTH;
-		return String.format("%02d:%02d",
+		String hundredths = String.valueOf((double) millis / 1000).split("\\.")[1];
+		return String.format("%02d:%02d.%s",
 			TimeUnit.MILLISECONDS.toMinutes(millis) % TimeUnit.HOURS.toMinutes(1),
-			TimeUnit.MILLISECONDS.toSeconds(millis) % TimeUnit.MINUTES.toSeconds(1));
+			TimeUnit.MILLISECONDS.toSeconds(millis) % TimeUnit.MINUTES.toSeconds(1),
+			hundredths);
 	}
 
 	private void resetMaiden()
@@ -693,6 +785,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		nyloCleanupFinished = false;
 		waveTime = 0;
 		cleanupTime = 0;
+		bossSpawnTime = 0;
 		personalDamage.remove("Nylocas Vasilias");
 		totalDamage.remove("Nylocas Vasilias");
 	}
@@ -714,6 +807,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		xarpusRecoveryTime = 0;
 		xarpusAcidTime = 0;
 		xarpusPreScreech = 0;
+		xarpusPreScreechTotal= 0;
 		personalDamage.remove("Xarpus");
 		totalDamage.remove("Xarpus");
 		totalHealing.remove("Xarpus");
