@@ -386,6 +386,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double xarpusPostScreech = personal - xarpusPreScreech;
 			double personalPercent = (personal / total) * 100;
 			double preScreechPercent = ((double) xarpusPreScreech / (double) xarpusPreScreechTotal) * 100;
+			double postScreechPercent = (xarpusPostScreech / (total - xarpusPreScreechTotal)) * 100;
 			messages.clear();
 
 			messages.add(
@@ -424,7 +425,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				new ChatMessageBuilder()
 					.append(ChatColorType.NORMAL)
 					.append("Post Screech Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(xarpusPostScreech))
+					.append(Color.RED, DMG_FORMAT.format(xarpusPostScreech) + " (" + DECIMAL_FORMAT.format(postScreechPercent) + "%)")
 					.build()
 			);
 
