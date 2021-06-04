@@ -48,6 +48,7 @@ import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.NpcChanged;
 import net.runelite.api.events.NpcDespawned;
@@ -79,7 +80,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private static final int NYLOCAS_REGION = 13122;
 	private static final int SOTETSEG_REGION = 13123;
 	private static final int SOTETSEG_MAZE_REGION = 13379;
-	private static final int NYLOCAS_TOTAL = 120;
+	private static final int NYLOCAS_WAVES_TOTAL = 31;
 	private static final int TICK_LENGTH = 600;
 	private static final String MAIDEN_WAVE = "Wave 'The Maiden of Sugadinti' complete!";
 	private static final String BLOAT_WAVE = "Wave 'The Pestilent Bloat' complete!";
@@ -89,9 +90,14 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private static final String COMPLETION = "Theatre of Blood total completion time:";
 	private static final Set<Integer> NYLOCAS_IDS = ImmutableSet.of(
 		NpcID.NYLOCAS_HAGIOS, NpcID.NYLOCAS_HAGIOS_8347, NpcID.NYLOCAS_HAGIOS_8350, NpcID.NYLOCAS_HAGIOS_8353,
-		NpcID.NYLOCAS_TOXOBOLOS, NpcID.NYLOCAS_TOXOBOLOS_8343, NpcID.NYLOCAS_TOXOBOLOS_8346,
-		NpcID.NYLOCAS_TOXOBOLOS_8349, NpcID.NYLOCAS_TOXOBOLOS_8352, NpcID.NYLOCAS_ISCHYROS, NpcID.NYLOCAS_ISCHYROS_8342,
-		NpcID.NYLOCAS_ISCHYROS_8345, NpcID.NYLOCAS_ISCHYROS_8348, NpcID.NYLOCAS_ISCHYROS_8351
+		NpcID.NYLOCAS_HAGIOS_10776, NpcID.NYLOCAS_HAGIOS_10779, NpcID.NYLOCAS_HAGIOS_10782, NpcID.NYLOCAS_HAGIOS_10785,
+		NpcID.NYLOCAS_HAGIOS_10793, NpcID.NYLOCAS_HAGIOS_10796, NpcID.NYLOCAS_HAGIOS_10799, NpcID.NYLOCAS_HAGIOS_10802,
+		NpcID.NYLOCAS_TOXOBOLOS_8343, NpcID.NYLOCAS_TOXOBOLOS_8346, NpcID.NYLOCAS_TOXOBOLOS_8349, NpcID.NYLOCAS_TOXOBOLOS_8352,
+		NpcID.NYLOCAS_TOXOBOLOS_10775, NpcID.NYLOCAS_TOXOBOLOS_10778, NpcID.NYLOCAS_TOXOBOLOS_10781, NpcID.NYLOCAS_TOXOBOLOS_10784,
+		NpcID.NYLOCAS_TOXOBOLOS_10792, NpcID.NYLOCAS_TOXOBOLOS_10795, NpcID.NYLOCAS_TOXOBOLOS_10798, NpcID.NYLOCAS_TOXOBOLOS_10801,
+		NpcID.NYLOCAS_ISCHYROS_8342, NpcID.NYLOCAS_ISCHYROS_8345, NpcID.NYLOCAS_ISCHYROS_8348, NpcID.NYLOCAS_ISCHYROS_8351,
+		NpcID.NYLOCAS_ISCHYROS_10774, NpcID.NYLOCAS_ISCHYROS_10777, NpcID.NYLOCAS_ISCHYROS_10780, NpcID.NYLOCAS_ISCHYROS_10783,
+		NpcID.NYLOCAS_ISCHYROS_10791, NpcID.NYLOCAS_ISCHYROS_10794, NpcID.NYLOCAS_ISCHYROS_10797, NpcID.NYLOCAS_ISCHYROS_10800
 	);
 	private static final Set<Point> NYLOCAS_VALID_SPAWNS = ImmutableSet.of(
 		new Point(17, 24), new Point(17, 25), new Point(18, 24), new Point(18, 25),
@@ -121,13 +127,14 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private int maiden30time;
 
 	private int nyloStartTick = -1;
-	private int totalNylos;
 	private int currentNylos;
 	private boolean nyloWavesFinished;
 	private boolean nyloCleanupFinished;
+	private boolean waveThisTick = false;
 	private int waveTime;
 	private int cleanupTime;
 	private int bossSpawnTime;
+	private int nyloWave = 0;
 
 	private int soteStartTick = -1;
 	private boolean sote66;
@@ -151,8 +158,8 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private double verzikP2healed;
 
 	private final Map<String, Integer> personalDamage = new HashMap<>();
-	private final Map<String, Integer> totalDamage  = new HashMap<>();
-	private final Map<String, Integer> totalHealing  = new HashMap<>();
+	private final Map<String, Integer> totalDamage = new HashMap<>();
+	private final Map<String, Integer> totalHealing = new HashMap<>();
 
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
@@ -226,37 +233,40 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double percent = (personal / total) * 100;
 			messages.clear();
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("70% - ")
-					.append(Color.RED, formatTime(maiden70time))
-					.build()
-			);
+			if (maidenStartTick > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("70% - ")
+						.append(Color.RED, formatTime(maiden70time))
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("50% - ")
-					.append(Color.RED, formatTime(maiden50time) + " (" + formatTime(maiden50time - maiden70time) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("50% - ")
+						.append(Color.RED, formatTime(maiden50time) + " (" + formatTime(maiden50time - maiden70time) + ")")
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("30% - ")
-					.append(Color.RED, formatTime(maiden30time) + " (" + formatTime(maiden30time - maiden50time) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("30% - ")
+						.append(Color.RED, formatTime(maiden30time) + " (" + formatTime(maiden30time - maiden50time) + ")")
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("0% - ")
-					.append(Color.RED, formatTime(client.getTickCount() - maidenStartTick) + " (" + formatTime((client.getTickCount() - maidenStartTick) - maiden30time) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("0% - ")
+						.append(Color.RED, formatTime(client.getTickCount() - maidenStartTick) + " (" + formatTime((client.getTickCount() - maidenStartTick) - maiden30time) + ")")
+						.build()
+				);
+			}
 
 			messages.add(
 				new ChatMessageBuilder()
@@ -298,37 +308,40 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double percent = (personal / total) * 100;
 			messages.clear();
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Waves - ")
-					.append(Color.RED, formatTime(waveTime))
-					.build()
-			);
+			if (nyloStartTick > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Waves - ")
+						.append(Color.RED, formatTime(waveTime))
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Cleanup - ")
-					.append(Color.RED, formatTime(cleanupTime) + " (" + formatTime(cleanupTime - waveTime) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Cleanup - ")
+						.append(Color.RED, formatTime(cleanupTime) + " (" + formatTime(cleanupTime - waveTime) + ")")
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Boss Spawn - ")
-					.append(Color.RED, formatTime(bossSpawnTime) + " (" + formatTime(bossSpawnTime - cleanupTime) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Boss Spawn - ")
+						.append(Color.RED, formatTime(bossSpawnTime) + " (" + formatTime(bossSpawnTime - cleanupTime) + ")")
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Boss Death - ")
-					.append(Color.RED, formatTime(client.getTickCount() - nyloStartTick) + " (" + formatTime((client.getTickCount() - nyloStartTick) - bossSpawnTime) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Boss Death - ")
+						.append(Color.RED, formatTime(client.getTickCount() - nyloStartTick) + " (" + formatTime((client.getTickCount() - nyloStartTick) - bossSpawnTime) + ")")
+						.build()
+				);
+			}
 
 			messages.add(
 				new ChatMessageBuilder()
@@ -346,29 +359,32 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double percent = (personal / total) * 100;
 			messages.clear();
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("66% - ")
-					.append(Color.RED, formatTime(sote66time))
-					.build()
-			);
+			if (soteStartTick > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("66% - ")
+						.append(Color.RED, formatTime(sote66time))
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("33% - ")
-					.append(Color.RED, formatTime(sote33time) + " (" + formatTime(sote33time - sote66time) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("33% - ")
+						.append(Color.RED, formatTime(sote33time) + " (" + formatTime(sote33time - sote66time) + ")")
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("0% - ")
-					.append(Color.RED, formatTime(client.getTickCount() - soteStartTick) + " (" + formatTime((client.getTickCount() - soteStartTick) - sote33time) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("0% - ")
+						.append(Color.RED, formatTime(client.getTickCount() - soteStartTick) + " (" + formatTime((client.getTickCount() - soteStartTick) - sote33time) + ")")
+						.build()
+				);
+			}
 
 			messages.add(
 				new ChatMessageBuilder()
@@ -389,29 +405,32 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double postScreechPercent = (xarpusPostScreech / (total - xarpusPreScreechTotal)) * 100;
 			messages.clear();
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Recovery Phase - ")
-					.append(Color.RED, formatTime(xarpusRecoveryTime))
-					.build()
-			);
+			if (xarpusStartTick > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Recovery Phase - ")
+						.append(Color.RED, formatTime(xarpusRecoveryTime))
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Screech Time - ")
-					.append(Color.RED, formatTime(xarpusAcidTime) + " (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Screech Time - ")
+						.append(Color.RED, formatTime(xarpusAcidTime) + " (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")")
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Death Time - ")
-					.append(Color.RED, formatTime(client.getTickCount() - xarpusStartTick) + " (" + formatTime((client.getTickCount() - xarpusStartTick) - xarpusAcidTime) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Death Time - ")
+						.append(Color.RED, formatTime(client.getTickCount() - xarpusStartTick) + " (" + formatTime((client.getTickCount() - xarpusStartTick) - xarpusAcidTime) + ")")
+						.build()
+				);
+			}
 
 			messages.add(
 				new ChatMessageBuilder()
@@ -456,29 +475,32 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double p2percent = (verzikP2personal / verzikP2total) * 100;
 			messages.clear();
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("P1 - ")
-					.append(Color.RED, formatTime(verzikP1time))
-					.build()
-			);
+			if (verzikStartTick > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("P1 - ")
+						.append(Color.RED, formatTime(verzikP1time))
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("P2 - ")
-					.append(Color.RED, formatTime(verzikP2time) + " (" + formatTime(verzikP2time - verzikP1time) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("P2 - ")
+						.append(Color.RED, formatTime(verzikP2time) + " (" + formatTime(verzikP2time - verzikP1time) + ")")
+						.build()
+				);
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("P3 - ")
-					.append(Color.RED, formatTime(client.getTickCount() - verzikStartTick) + " (" + formatTime((client.getTickCount() - verzikStartTick) - verzikP2time) + ")")
-					.build()
-			);
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("P3 - ")
+						.append(Color.RED, formatTime(client.getTickCount() - verzikStartTick) + " (" + formatTime((client.getTickCount() - verzikStartTick) - verzikP2time) + ")")
+						.build()
+				);
+			}
 
 			messages.add(
 				new ChatMessageBuilder()
@@ -524,7 +546,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 
 		if (!messages.isEmpty())
 		{
-			for(String m:messages)
+			for (String m : messages)
 			{
 				chatMessageManager.queue(QueuedMessage.builder()
 					.type(ChatMessageType.GAMEMESSAGE)
@@ -549,18 +571,26 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		switch (npcId)
 		{
 			case NpcID.SOTETSEG_8388:
+			case NpcID.SOTETSEG_10865:
+			case NpcID.SOTETSEG_10868:
 				if (soteStartTick == -1)
 				{
 					soteStartTick = client.getTickCount();
 				}
 				break;
 			case NpcID.XARPUS_8339:
+			case NpcID.XARPUS_10767:
+			case NpcID.XARPUS_10771:
 				xarpusStartTick = client.getTickCount();
 				break;
 			case NpcID.XARPUS_8340:
+			case NpcID.XARPUS_10768:
+			case NpcID.XARPUS_10772:
 				xarpusRecoveryTime = client.getTickCount() - xarpusStartTick;
 				break;
 			case NpcID.VERZIK_VITUR_8370:
+			case NpcID.VERZIK_VITUR_10831:
+			case NpcID.VERZIK_VITUR_10848:
 				verzikStartTick = client.getTickCount();
 				break;
 		}
@@ -580,29 +610,35 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		switch (npcId)
 		{
 			case NpcID.THE_MAIDEN_OF_SUGADINTI:
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_10814:
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_10822:
 				maidenStartTick = client.getTickCount();
 				break;
 			case NullNpcID.NULL_8358:
+			case NullNpcID.NULL_10790:
+			case NullNpcID.NULL_10811:
 				nyloStartTick = client.getTickCount();
 				break;
 			case NpcID.NYLOCAS_VASILIAS:
+			case NpcID.NYLOCAS_VASILIAS_10786:
+			case NpcID.NYLOCAS_VASILIAS_10807:
 				bossSpawnTime = client.getTickCount() - nyloStartTick;
 				break;
 			case NpcID.VERZIK_VITUR_8371:
-			{
+			case NpcID.VERZIK_VITUR_10832:
+			case NpcID.VERZIK_VITUR_10849:
 				verzikP1time = client.getTickCount() - verzikStartTick;
 				verzikP1personal = personalDamage.getOrDefault("Verzik Vitur", 0);
 				verzikP1total = totalDamage.getOrDefault("Verzik Vitur", 0);
 				break;
-			}
 			case NpcID.VERZIK_VITUR_8373:
-			{
+			case NpcID.VERZIK_VITUR_10834:
+			case NpcID.VERZIK_VITUR_10851:
 				verzikP2time = client.getTickCount() - verzikStartTick;
 				verzikP2personal = personalDamage.getOrDefault("Verzik Vitur", 0) - verzikP1personal;
 				verzikP2total = totalDamage.getOrDefault("Verzik Vitur", 0) - verzikP1total;
 				verzikP2healed = totalHealing.getOrDefault("Verzik Vitur", 0);
 				break;
-			}
 		}
 
 		if (!NYLOCAS_IDS.contains(npcId) || prevRegion != NYLOCAS_REGION)
@@ -619,9 +655,13 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			return;
 		}
 
-		totalNylos++;
+		if (!waveThisTick)
+		{
+			nyloWave++;
+			waveThisTick = true;
+		}
 
-		if (totalNylos == NYLOCAS_TOTAL && !nyloWavesFinished)
+		if (nyloWave == NYLOCAS_WAVES_TOTAL && !nyloWavesFinished)
 		{
 			waveTime = client.getTickCount() - nyloStartTick;
 			nyloWavesFinished = true;
@@ -650,6 +690,20 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		{
 			cleanupTime = client.getTickCount() - nyloStartTick;
 			nyloCleanupFinished = true;
+		}
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		if (!tobInside)
+		{
+			return;
+		}
+
+		if (waveThisTick)
+		{
+			waveThisTick = false;
 		}
 	}
 
@@ -780,13 +834,14 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private void resetNylo()
 	{
 		nyloStartTick = -1;
-		totalNylos = 0;
 		currentNylos = 0;
 		nyloWavesFinished = false;
 		nyloCleanupFinished = false;
 		waveTime = 0;
 		cleanupTime = 0;
 		bossSpawnTime = 0;
+		waveThisTick = false;
+		nyloWave = 0;
 		personalDamage.remove("Nylocas Vasilias");
 		totalDamage.remove("Nylocas Vasilias");
 	}
@@ -808,7 +863,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		xarpusRecoveryTime = 0;
 		xarpusAcidTime = 0;
 		xarpusPreScreech = 0;
-		xarpusPreScreechTotal= 0;
+		xarpusPreScreechTotal = 0;
 		personalDamage.remove("Xarpus");
 		totalDamage.remove("Xarpus");
 		totalHealing.remove("Xarpus");
