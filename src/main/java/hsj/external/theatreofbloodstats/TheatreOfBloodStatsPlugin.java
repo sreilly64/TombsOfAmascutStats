@@ -268,13 +268,16 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				);
 			}
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Personal Boss Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-					.build()
-			);
+			if (personal > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Personal Boss Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+						.build()
+				);
+			}
 
 			messages.add(
 				new ChatMessageBuilder()
@@ -292,13 +295,16 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			double percent = (personal / total) * 100;
 			messages.clear();
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Personal Boss Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-					.build()
-			);
+			if (personal > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Personal Boss Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+						.build()
+				);
+			}
 			resetBloat();
 		}
 		else if (strippedMessage.startsWith(NYLOCAS_WAVE))
@@ -343,13 +349,16 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				);
 			}
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Personal Boss Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-					.build()
-			);
+			if (personal > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Personal Boss Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+						.build()
+				);
+			}
 			resetNylo();
 		}
 		else if (strippedMessage.startsWith(SOTETSEG_WAVE))
@@ -386,13 +395,16 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				);
 			}
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Personal Boss Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-					.build()
-			);
+			if (personal > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Personal Boss Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+						.build()
+				);
+			}
 			resetSote();
 		}
 		else if (strippedMessage.startsWith(XARPUS_WAVE))
@@ -432,29 +444,38 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				);
 			}
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Pre Screech Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(xarpusPreScreech) + " (" + DECIMAL_FORMAT.format(preScreechPercent) + "%)")
-					.build()
-			);
+			if (xarpusPreScreech >  0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Pre Screech Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(xarpusPreScreech) + " (" + DECIMAL_FORMAT.format(preScreechPercent) + "%)")
+						.build()
+				);
+			}
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Post Screech Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(xarpusPostScreech) + " (" + DECIMAL_FORMAT.format(postScreechPercent) + "%)")
-					.build()
-			);
+			if (xarpusPostScreech > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Post Screech Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(xarpusPostScreech) + " (" + DECIMAL_FORMAT.format(postScreechPercent) + "%)")
+						.build()
+				);
+			}
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("Personal Boss Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(personalPercent) + "%)")
-					.build()
-			);
+			if (personal > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("Personal Boss Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(personalPercent) + "%)")
+						.build()
+				);
+			}
 
 			messages.add(
 				new ChatMessageBuilder()
@@ -502,29 +523,38 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 				);
 			}
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("P1 Personal Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(verzikP1personal) + " (" + DECIMAL_FORMAT.format(p1percent) + "%)")
-					.build()
-			);
+			if (verzikP1personal > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("P1 Personal Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(verzikP1personal) + " (" + DECIMAL_FORMAT.format(p1percent) + "%)")
+						.build()
+				);
+			}
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("P2 Personal Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(verzikP2personal) + " (" + DECIMAL_FORMAT.format(p2percent) + "%)")
-					.build()
-			);
+			if (verzikP2personal > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("P2 Personal Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(verzikP2personal) + " (" + DECIMAL_FORMAT.format(p2percent) + "%)")
+						.build()
+				);
+			}
 
-			messages.add(
-				new ChatMessageBuilder()
-					.append(ChatColorType.NORMAL)
-					.append("P3 Personal Damage - ")
-					.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(p3percent) + "%)")
-					.build()
-			);
+			if (p3personal > 0)
+			{
+				messages.add(
+					new ChatMessageBuilder()
+						.append(ChatColorType.NORMAL)
+						.append("P3 Personal Damage - ")
+						.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(p3percent) + "%)")
+						.build()
+				);
+			}
 
 			messages.add(
 				new ChatMessageBuilder()
