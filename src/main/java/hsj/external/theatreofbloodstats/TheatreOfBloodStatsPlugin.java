@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
@@ -76,18 +77,19 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("###.00");
 	private static final int THEATRE_OF_BLOOD_ROOM_STATUS = 6447;
 	private static final int THEATRE_OF_BLOOD_BOSS_HP = 6448;
+	private static final int TOB_LOBBY = 14642;
 	private static final int MAIDEN_REGION = 12613;
 	private static final int NYLOCAS_REGION = 13122;
 	private static final int SOTETSEG_REGION = 13123;
 	private static final int SOTETSEG_MAZE_REGION = 13379;
 	private static final int NYLOCAS_WAVES_TOTAL = 31;
 	private static final int TICK_LENGTH = 600;
-	private static final String MAIDEN_WAVE = "Wave 'The Maiden of Sugadinti' complete!";
-	private static final String BLOAT_WAVE = "Wave 'The Pestilent Bloat' complete!";
-	private static final String NYLOCAS_WAVE = "Wave 'The Nylocas' complete!";
-	private static final String SOTETSEG_WAVE = "Wave 'Sotetseg' complete!";
-	private static final String XARPUS_WAVE = "Wave 'Xarpus' complete!";
-	private static final String COMPLETION = "Theatre of Blood total completion time:";
+	private static final Pattern MAIDEN_WAVE = Pattern.compile("Wave 'The Maiden of Sugadinti' \\(.*\\) complete!");
+	private static final Pattern BLOAT_WAVE = Pattern.compile("Wave 'The Pestilent Bloat' \\(.*\\) complete!");
+	private static final Pattern NYLOCAS_WAVE = Pattern.compile("Wave 'The Nylocas' \\(.*\\) complete!");
+	private static final Pattern SOTETSEG_WAVE = Pattern.compile("Wave 'Sotetseg' \\(.*\\) complete!");
+	private static final Pattern XARPUS_WAVE = Pattern.compile("Wave 'Xarpus' \\(.*\\) complete!");
+	private static final Pattern COMPLETION = Pattern.compile("Theatre of Blood total completion time:");
 	private static final Set<Integer> NYLOCAS_IDS = ImmutableSet.of(
 		NpcID.NYLOCAS_HAGIOS, NpcID.NYLOCAS_HAGIOS_8347, NpcID.NYLOCAS_HAGIOS_8350, NpcID.NYLOCAS_HAGIOS_8353,
 		NpcID.NYLOCAS_HAGIOS_10776, NpcID.NYLOCAS_HAGIOS_10779, NpcID.NYLOCAS_HAGIOS_10782, NpcID.NYLOCAS_HAGIOS_10785,
@@ -211,6 +213,13 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 					sote33time = client.getTickCount() - soteStartTick;
 				}
 				break;
+			case TOB_LOBBY:
+				resetMaiden();
+				resetNylo();
+				resetSote();
+				resetXarpus();
+				resetVerzik();
+				break;
 		}
 	}
 
@@ -225,7 +234,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		String strippedMessage = Text.removeTags(event.getMessage());
 		List<String> messages = new ArrayList<>(Collections.emptyList());
 
-		if (strippedMessage.startsWith(MAIDEN_WAVE))
+		if (MAIDEN_WAVE.matcher(strippedMessage).find())
 		{
 			double personal = personalDamage.getOrDefault("The Maiden of Sugadinti", 0);
 			double total = totalDamage.getOrDefault("The Maiden of Sugadinti", 0);
@@ -288,7 +297,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			);
 			resetMaiden();
 		}
-		else if (strippedMessage.startsWith(BLOAT_WAVE))
+		else if (BLOAT_WAVE.matcher(strippedMessage).find())
 		{
 			double personal = personalDamage.getOrDefault("Pestilent Bloat", 0);
 			double total = totalDamage.getOrDefault("Pestilent Bloat", 0);
@@ -307,7 +316,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			}
 			resetBloat();
 		}
-		else if (strippedMessage.startsWith(NYLOCAS_WAVE))
+		else if (NYLOCAS_WAVE.matcher(strippedMessage).find())
 		{
 			double personal = personalDamage.getOrDefault("Nylocas Vasilias", 0);
 			double total = totalDamage.getOrDefault("Nylocas Vasilias", 0);
@@ -361,7 +370,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			}
 			resetNylo();
 		}
-		else if (strippedMessage.startsWith(SOTETSEG_WAVE))
+		else if (SOTETSEG_WAVE.matcher(strippedMessage).find())
 		{
 			double personal = personalDamage.getOrDefault("Sotetseg", 0);
 			double total = totalDamage.getOrDefault("Sotetseg", 0);
@@ -407,7 +416,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			}
 			resetSote();
 		}
-		else if (strippedMessage.startsWith(XARPUS_WAVE))
+		else if (XARPUS_WAVE.matcher(strippedMessage).find())
 		{
 			double personal = personalDamage.getOrDefault("Xarpus", 0);
 			double total = totalDamage.getOrDefault("Xarpus", 0);
@@ -486,7 +495,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			);
 			resetXarpus();
 		}
-		else if (strippedMessage.startsWith(COMPLETION))
+		else if (COMPLETION.matcher(strippedMessage).find())
 		{
 			double p3personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
 			double p3total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
