@@ -717,8 +717,8 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 		}
 		else if (COMPLETION.matcher(strippedMessage).find())
 		{
-			double personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
-			double total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
+			double personal = personalDamage.getOrDefault("Verzik Vitur", 0) ;
+			double total = totalDamage.getOrDefault("Verzik Vitur", 0);
 			double p3personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
 			double p3total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
 			double p3healed = totalHealing.getOrDefault("Verzik Vitur", 0) - verzikP2healed;

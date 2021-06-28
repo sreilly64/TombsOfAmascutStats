@@ -85,7 +85,7 @@ public class TheatreOfBloodStatsInfoBox extends InfoBox
 			}
 		}
 
-		if (config.infoBoxTooltipDmg() && !StringUtils.isEmpty(damage))
+		if (config.infoBoxTooltipDmg() && !StringUtils.isEmpty(damage) && !damage.equals("0"))
 		{
 			sb.append(damage).append(" (").append(percent).append("%)");
 			if (config.infoBoxTooltipHealed())
