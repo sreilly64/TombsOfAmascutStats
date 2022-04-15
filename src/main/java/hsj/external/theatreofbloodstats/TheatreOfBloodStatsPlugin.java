@@ -74,13 +74,14 @@ import net.runelite.client.util.Text;
 @PluginDescriptor(
 	name = "Theatre of Blood Stats",
 	description = "Theatre of Blood room splits and damage",
-	tags = {"combat", "raid", "pve", "pvm", "bosses", "timer"},
+	tags = {"combat", "raid", "pve", "pvm", "bosses", "tob"},
 	enabledByDefault = false
 )
 public class TheatreOfBloodStatsPlugin extends Plugin
 {
 	private static final DecimalFormat DMG_FORMAT = new DecimalFormat("#,##0");
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("##0.0");
+	private static final int PRECISE_TIMER = 11866;
 	private static final int THEATRE_OF_BLOOD_ROOM_STATUS = 6447;
 	private static final int THEATRE_OF_BLOOD_BOSS_HP = 6448;
 	private static final int TOB_LOBBY = 14642;
@@ -216,31 +217,10 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			return;
 		}
 
-		if (!config.updateMessage())
-		{
-			String m = new ChatMessageBuilder()
-				.append(Color.RED, "<br>")
-				.append(Color.RED, "Theatre Of Blood Stats Has Been Updated<br>")
-				.append(Color.RED, "A bunch of new config options have been added<br>")
-				.append(Color.RED, "Make sure to check them out<br>")
-				.append(Color.RED, "You can now choose between chat messages or info boxes with tooltips<br>")
-				.append(Color.RED, "And toggle different settings on/off<br>")
-				.append(Color.RED, "If you shift right click the info boxes and click detach<br>")
-				.append(Color.RED, "You can move this plugins boxes independently from the others")
-				.build();
-
-			chatMessageManager.queue(QueuedMessage.builder()
-				.type(ChatMessageType.GAMEMESSAGE)
-				.runeLiteFormattedMessage(m)
-				.build());
-
-			configManager.setConfiguration("theatreofbloodstats", "updateMessage", true);
-		}
-
-		int tobVar = client.getVar(Varbits.THEATRE_OF_BLOOD);
+		int tobVar = client.getVarbitValue(Varbits.THEATRE_OF_BLOOD);
 		tobInside = tobVar == 2 || tobVar == 3;
 
-		int preciseTimerVar = client.getVarbitValue(11866);
+		int preciseTimerVar = client.getVarbitValue(PRECISE_TIMER);
 		preciseTimers = preciseTimerVar == 1 ;
 
 		if (!tobInside)

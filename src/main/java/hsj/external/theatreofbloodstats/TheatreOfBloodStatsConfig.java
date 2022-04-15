@@ -129,16 +129,4 @@ public interface TheatreOfBloodStatsConfig extends Config
 	{
 		return true;
 	}
-
-	@ConfigItem(
-		keyName = "updateMessage",
-		name = "",
-		description = "",
-		hidden = true,
-		position = 999
-	)
-	default boolean updateMessage()
-	{
-		return false;
-	}
 }
