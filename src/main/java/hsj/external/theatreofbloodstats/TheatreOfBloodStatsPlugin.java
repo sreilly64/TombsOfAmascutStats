@@ -44,6 +44,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Hitsplat;
+import net.runelite.api.HitsplatID;
 import net.runelite.api.NPC;
 import net.runelite.api.NpcID;
 import net.runelite.api.NullNpcID;
@@ -1072,7 +1073,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			totalDmg += hitsplat.getAmount();
 			totalDamage.put(npcName, totalDmg);
 		}
-		else if (hitsplat.getHitsplatType() == Hitsplat.HitsplatType.HEAL)
+		else if (hitsplat.getHitsplatType() == HitsplatID.HEAL)
 		{
 			int healed = totalHealing.getOrDefault(npcName, 0);
 			healed += hitsplat.getAmount();
