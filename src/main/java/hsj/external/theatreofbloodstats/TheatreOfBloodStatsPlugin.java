@@ -84,11 +84,8 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("##0.0");
 	private static final int PRECISE_TIMER = 11866;
 	private static final int THEATRE_OF_BLOOD_ROOM_STATUS = 6447;
-	private static final int THEATRE_OF_BLOOD_BOSS_HP = 6448;
 	private static final int TOB_LOBBY = 14642;
-	private static final int MAIDEN_REGION = 12613;
 	private static final int NYLOCAS_REGION = 13122;
-	private static final int SOTETSEG_REGION = 13123;
 	private static final int SOTETSEG_MAZE_REGION = 13379;
 	private static final int NYLOCAS_WAVES_TOTAL = 31;
 	private static final int TICK_LENGTH = 600;
@@ -237,47 +234,14 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			prevRegion = region;
 		}
 
-		int bosshp = client.getVarbitValue(THEATRE_OF_BLOOD_BOSS_HP);
-
-		switch (region)
+		if (region == TOB_LOBBY)
 		{
-			case MAIDEN_REGION:
-				if (bosshp <= 700 && bosshp > 0 && !maiden70)
-				{
-					maiden70 = true;
-					maiden70time = client.getTickCount() - maidenStartTick;
-				}
-				else if (bosshp <= 500 && bosshp > 0 && !maiden50)
-				{
-					maiden50 = true;
-					maiden50time = client.getTickCount() - maidenStartTick;
-				}
-				else if (bosshp <= 300 && bosshp > 0 && !maiden30)
-				{
-					maiden30 = true;
-					maiden30time = client.getTickCount() - maidenStartTick;
-				}
-				break;
-			case SOTETSEG_REGION:
-				if (bosshp == 666 && !sote66)
-				{
-					sote66 = true;
-					sote66time = client.getTickCount() - soteStartTick;
-				}
-				else if (bosshp == 333 && !sote33)
-				{
-					sote33 = true;
-					sote33time = client.getTickCount() - soteStartTick;
-				}
-				break;
-			case TOB_LOBBY:
-				resetMaiden();
-				resetBloat();
-				resetNylo();
-				resetSote();
-				resetXarpus();
-				resetVerzik();
-				break;
+			resetMaiden();
+			resetBloat();
+			resetNylo();
+			resetSote();
+			resetXarpus();
+			resetVerzik();
 		}
 	}
 
@@ -883,6 +847,22 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 					soteStartTick = client.getTickCount();
 				}
 				break;
+			case NpcID.SOTETSEG:
+			case NpcID.SOTETSEG_10864:
+			case NpcID.SOTETSEG_10867:
+				if (soteStartTick != -1)
+				{
+					if (!sote66)
+					{
+						sote66time = client.getTickCount() - soteStartTick;
+						sote66 = true;
+					}
+					else if (!sote33)
+					{
+						sote33time = client.getTickCount() - soteStartTick;
+						sote33 = true;
+					}
+				}
 			case NpcID.XARPUS_8339:
 			case NpcID.XARPUS_10767:
 			case NpcID.XARPUS_10771:
@@ -918,6 +898,28 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			case NpcID.THE_MAIDEN_OF_SUGADINTI_10814:
 			case NpcID.THE_MAIDEN_OF_SUGADINTI_10822:
 				maidenStartTick = client.getTickCount();
+				break;
+			case NpcID.NYLOCAS_MATOMENOS:
+			case NpcID.NYLOCAS_MATOMENOS_10820:
+			case NpcID.NYLOCAS_MATOMENOS_10828:
+				if (maidenStartTick != -1)
+				{
+					if (!maiden70)
+					{
+						maiden70 = true;
+						maiden70time = client.getTickCount() - maidenStartTick;
+					}
+					else if (!maiden50)
+					{
+						maiden50 = true;
+						maiden50time = client.getTickCount() - maidenStartTick;
+					}
+					else if (!maiden30)
+					{
+						maiden30 = true;
+						maiden30time = client.getTickCount() - maidenStartTick;
+					}
+				}
 				break;
 			case NullNpcID.NULL_8358:
 			case NullNpcID.NULL_10790:
