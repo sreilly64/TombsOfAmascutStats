@@ -152,11 +152,8 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private boolean preciseTimers;
 
 	private int maidenStartTick = -1;
-	private boolean maiden70;
 	private int maiden70time;
-	private boolean maiden50;
 	private int maiden50time;
-	private boolean maiden30;
 	private int maiden30time;
 
 	private int nyloStartTick = -1;
@@ -839,6 +836,30 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_8361:
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_10815:
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_10823:
+				if (maidenStartTick != -1)
+				{
+					maiden70time = client.getTickCount() - maidenStartTick;
+				}
+				break;
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_8362:
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_10816:
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_10824:
+				if (maidenStartTick != -1)
+				{
+					maiden50time = client.getTickCount() - maidenStartTick;
+				}
+				break;
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_8363:
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_10817:
+			case NpcID.THE_MAIDEN_OF_SUGADINTI_10825:
+				if (maidenStartTick != -1)
+				{
+					maiden30time = client.getTickCount() - maidenStartTick;
+				}
+				break;
 			case NpcID.SOTETSEG_8388:
 			case NpcID.SOTETSEG_10865:
 			case NpcID.SOTETSEG_10868:
@@ -863,6 +884,7 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 						sote33 = true;
 					}
 				}
+				break;
 			case NpcID.XARPUS_8339:
 			case NpcID.XARPUS_10767:
 			case NpcID.XARPUS_10771:
@@ -898,28 +920,6 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 			case NpcID.THE_MAIDEN_OF_SUGADINTI_10814:
 			case NpcID.THE_MAIDEN_OF_SUGADINTI_10822:
 				maidenStartTick = client.getTickCount();
-				break;
-			case NpcID.NYLOCAS_MATOMENOS:
-			case NpcID.NYLOCAS_MATOMENOS_10820:
-			case NpcID.NYLOCAS_MATOMENOS_10828:
-				if (maidenStartTick != -1)
-				{
-					if (!maiden70)
-					{
-						maiden70 = true;
-						maiden70time = client.getTickCount() - maidenStartTick;
-					}
-					else if (!maiden50)
-					{
-						maiden50 = true;
-						maiden50time = client.getTickCount() - maidenStartTick;
-					}
-					else if (!maiden30)
-					{
-						maiden30 = true;
-						maiden30time = client.getTickCount() - maidenStartTick;
-					}
-				}
 				break;
 			case NullNpcID.NULL_8358:
 			case NullNpcID.NULL_10790:
@@ -1131,11 +1131,8 @@ public class TheatreOfBloodStatsPlugin extends Plugin
 	private void resetMaiden()
 	{
 		maidenStartTick = -1;
-		maiden70 = false;
 		maiden70time = 0;
-		maiden50 = false;
 		maiden50time = 0;
-		maiden30 = false;
 		maiden30time = 0;
 		personalDamage.remove("The Maiden of Sugadinti");
 		totalDamage.remove("The Maiden of Sugadinti");
