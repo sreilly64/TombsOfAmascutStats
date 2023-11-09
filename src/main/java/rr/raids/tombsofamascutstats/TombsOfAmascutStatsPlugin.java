@@ -26,7 +26,7 @@ package rr.raids.tombsofamascutstats;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
-import net.runelite.api.Point;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
@@ -49,9 +49,9 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 @PluginDescriptor(
 	name = "Tombs of Amascut Stats",
 	description = "Tombs of Amascut room splits and damage",
@@ -63,42 +63,65 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final DecimalFormat DMG_FORMAT = new DecimalFormat("#,##0");
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("##0.0");
 	private static final int PRECISE_TIMER = 11866;
-	private static final int THEATRE_OF_BLOOD_ROOM_STATUS = 6447;
-	private static final int TOB_LOBBY = 14642;
-	private static final int NYLOCAS_REGION = 13122;
-	private static final int SOTETSEG_MAZE_REGION = 13379;
-	private static final int NYLOCAS_WAVES_TOTAL = 31;
 	private static final int TICK_LENGTH = 600;
-	private static final int MAIDEN_ID = 25748;
-	private static final int BLOAT_ID = 25749;
-	private static final int NYLOCAS_ID = 25750;
-	private static final int SOTETSEG_ID = 25751;
-	private static final int XARPUS_ID = 25752;
-	private static final int VERZIK_ID = 22473;
-	private static final Pattern MAIDEN_WAVE = Pattern.compile("Wave 'The Maiden of Sugadinti' \\(.*\\) complete!");
-	private static final Pattern BLOAT_WAVE = Pattern.compile("Wave 'The Pestilent Bloat' \\(.*\\) complete!Duration: (\\d+):(\\d+)\\.?(\\d+)");
-	private static final Pattern NYLOCAS_WAVE = Pattern.compile("Wave 'The Nylocas' \\(.*\\) complete!");
-	private static final Pattern SOTETSEG_WAVE = Pattern.compile("Wave 'Sotetseg' \\(.*\\) complete!");
-	private static final Pattern XARPUS_WAVE = Pattern.compile("Wave 'Xarpus' \\(.*\\) complete!");
-	private static final Pattern COMPLETION = Pattern.compile("Theatre of Blood total completion time:");
-	private static final Set<Integer> NYLOCAS_IDS = ImmutableSet.of(
-		NpcID.NYLOCAS_HAGIOS, NpcID.NYLOCAS_HAGIOS_8347, NpcID.NYLOCAS_HAGIOS_8350, NpcID.NYLOCAS_HAGIOS_8353,
-		NpcID.NYLOCAS_HAGIOS_10776, NpcID.NYLOCAS_HAGIOS_10779, NpcID.NYLOCAS_HAGIOS_10782, NpcID.NYLOCAS_HAGIOS_10785,
-		NpcID.NYLOCAS_HAGIOS_10793, NpcID.NYLOCAS_HAGIOS_10796, NpcID.NYLOCAS_HAGIOS_10799, NpcID.NYLOCAS_HAGIOS_10802,
-		NpcID.NYLOCAS_TOXOBOLOS_8343, NpcID.NYLOCAS_TOXOBOLOS_8346, NpcID.NYLOCAS_TOXOBOLOS_8349, NpcID.NYLOCAS_TOXOBOLOS_8352,
-		NpcID.NYLOCAS_TOXOBOLOS_10775, NpcID.NYLOCAS_TOXOBOLOS_10778, NpcID.NYLOCAS_TOXOBOLOS_10781, NpcID.NYLOCAS_TOXOBOLOS_10784,
-		NpcID.NYLOCAS_TOXOBOLOS_10792, NpcID.NYLOCAS_TOXOBOLOS_10795, NpcID.NYLOCAS_TOXOBOLOS_10798, NpcID.NYLOCAS_TOXOBOLOS_10801,
-		NpcID.NYLOCAS_ISCHYROS_8342, NpcID.NYLOCAS_ISCHYROS_8345, NpcID.NYLOCAS_ISCHYROS_8348, NpcID.NYLOCAS_ISCHYROS_8351,
-		NpcID.NYLOCAS_ISCHYROS_10774, NpcID.NYLOCAS_ISCHYROS_10777, NpcID.NYLOCAS_ISCHYROS_10780, NpcID.NYLOCAS_ISCHYROS_10783,
-		NpcID.NYLOCAS_ISCHYROS_10791, NpcID.NYLOCAS_ISCHYROS_10794, NpcID.NYLOCAS_ISCHYROS_10797, NpcID.NYLOCAS_ISCHYROS_10800
+	private static final int WARDENS_P2_DAMAGE_ME_HITSPLAT_ID = 53;
+	private static final int WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID = 54;
+	private static final int WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID = 55;
+	private static final int BABA_PET_ID = 27383;
+	private static final int KEPHRI_SHIELDED_HEALING_HITSPLAT_ID = 11;
+	private static final int KEPHRI_PET_ID = 27384;
+	private static final int AKKHA_PET_ID = 27382;
+	private static final int ZEBAK_PET_ID = 27385;
+	private static final int OBELISK_ICON_ID = 21788;
+	private static final int ELIDNIS_WARDEN_PET_ID = 27354;
+	private static final int TUMEKENS_WARDEN_PET_ID = 27352;
+	private static final int TOA_ATRIUM_REGION_ID = 14160;
+	private static final int BABA_PUZZLE_ROOM_REGION_ID = 15186;
+	private static final int BABA_ROOM_REGION_ID = 15188;
+	private static final int KEPHRI_PUZZLE_ROOM_REGION_ID = 14162;
+	private static final int KEPHRI_ROOM_REGION_ID = 14164;
+	private static final int AKKHA_PUZZLE_ROOM_REGION_ID = 14674;
+	private static final int AKKHA_ROOM_REGION_ID = 14676;
+	private static final int ZEBAK_PUZZLE_ROOM_REGION_ID = 15698;
+	private static final int ZEBAK_ROOM_REGION_ID = 15700;
+	private static final int WARDENS_OBELISK_ROOM_REGION_ID = 15184;
+	private static final int WARDENS_P3_ROOM_REGION_ID = 15696;
+	private static final int TOA_LOOT_ROOM_REGION_ID = 14672;
+	private static final int TOA_LOBBY_REGION_ID = 13454;
+
+	private static final Set<Integer> TOA_ROOM_IDS = ImmutableSet.of(
+			TOA_ATRIUM_REGION_ID,
+			BABA_PUZZLE_ROOM_REGION_ID,
+			BABA_ROOM_REGION_ID,
+			KEPHRI_PUZZLE_ROOM_REGION_ID,
+			KEPHRI_ROOM_REGION_ID,
+			AKKHA_PUZZLE_ROOM_REGION_ID,
+			AKKHA_ROOM_REGION_ID,
+			ZEBAK_PUZZLE_ROOM_REGION_ID,
+			ZEBAK_ROOM_REGION_ID,
+			WARDENS_OBELISK_ROOM_REGION_ID,
+			WARDENS_P3_ROOM_REGION_ID,
+			TOA_LOOT_ROOM_REGION_ID,
+			TOA_LOBBY_REGION_ID
 	);
-	private static final Set<Point> NYLOCAS_VALID_SPAWNS = ImmutableSet.of(
-		new Point(17, 24), new Point(17, 25), new Point(18, 24), new Point(18, 25),
-		new Point(31, 9), new Point(31, 10), new Point(32, 9), new Point(32, 10),
-		new Point(46, 24), new Point(46, 25), new Point(47, 24), new Point(47, 25)
-	);
+
+	private static final Pattern BABA_STARTED = Pattern.compile("Challenge started: Ba-Ba\\.");
+	private static final Pattern KEPHRI_STARTED = Pattern.compile("Challenge started: Kephri\\.");
+	private static final Pattern AKKHA_STARTED = Pattern.compile("Challenge started: Akkha\\.");
+	private static final Pattern ZEBAK_STARTED = Pattern.compile("Challenge started: Zebak\\.");
+	private static final Pattern WARDENS_STARTED = Pattern.compile("Challenge started: The Wardens\\.");
+	private static final Pattern BABA_COMPLETE = Pattern.compile("Challenge complete: Ba-Ba\\.");
+	private static final Pattern KEPHRI_COMPLETE = Pattern.compile("Challenge complete: Kephri\\.");
+	private static final Pattern AKKHA_COMPLETE = Pattern.compile("Challenge complete: Akkha\\.");
+	private static final Pattern ZEBAK_COMPLETE = Pattern.compile("Challenge complete: Zebak\\.");
+	private static final Pattern OBELISK_COMPLETE_TUMEKEN_SPAWNS = Pattern.compile("As Elidinis' Warden falls, Tumeken's Warden powers up!");
+	private static final Pattern OBELISK_COMPLETE_ELIDINIS_SPAWNS = Pattern.compile("As Tumeken's Warden falls, Elidinis' Warden powers up!");
+	private static final Pattern WARDENS_P2_COMPLETE_TUMEKEN_SPAWNS = Pattern.compile("Elidinis' Warden uses the last of its power to restore Tumeken's Warden!");
+	private static final Pattern WARDENS_P2_COMPLETE_ELIDINIS_SPAWNS = Pattern.compile("Tumeken's Warden uses the last of its power to restore Elidinis' Warden!");
+	private static final Pattern WARDENS_COMPLETE = Pattern.compile("Challenge complete: The Wardens\\.");
+
 	private static final Set<String> BOSS_NAMES = ImmutableSet.of(
-		"The Maiden of Sugadinti", "Pestilent Bloat", "Nylocas Vasilias", "Sotetseg", "Xarpus", "Verzik Vitur"
+		"Ba-Ba", "Kephri", "Akkha", "Zebak", "Obelisk", "Core", "Tumeken's Warden", "Elidinis' Warden"
 	);
 
 	@Inject
@@ -119,53 +142,34 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Inject
 	private ConfigManager configManager;
 
-	private TombsOfAmascutStatsStatsInfoBox maidenInfoBox;
-	private TombsOfAmascutStatsStatsInfoBox bloatInfoBox;
-	private TombsOfAmascutStatsStatsInfoBox nyloInfoBox;
-	private TombsOfAmascutStatsStatsInfoBox soteInfoBox;
-	private TombsOfAmascutStatsStatsInfoBox xarpusInfoBox;
-	private TombsOfAmascutStatsStatsInfoBox verzikInfoBox;
+	private TombsOfAmascutStatsStatsInfoBox babaInfoBox;
+	private TombsOfAmascutStatsStatsInfoBox kephriInfoBox;
+	private TombsOfAmascutStatsStatsInfoBox akkhaInfoBox;
+	private TombsOfAmascutStatsStatsInfoBox zebakInfoBox;
+	private TombsOfAmascutStatsStatsInfoBox obeliskInfoBox;
+	private TombsOfAmascutStatsStatsInfoBox wardensP2InfoBox;
+	private TombsOfAmascutStatsStatsInfoBox wardensP3InfoBox;
 
-	private int prevRegion;
-	private boolean tobInside;
+	private boolean toaInside;
 	private boolean instanced;
 	private boolean preciseTimers;
+	private boolean fightingElidinisWardenInP3;
+	private boolean wardensP4EnrageHeal = false;
 
-	private int maidenStartTick = -1;
-	private int maiden70time;
-	private int maiden50time;
-	private int maiden30time;
+	private int babaStartTick = -1;
+	//TODO add baba split times
+	private int kephriStartTick = -1;
+	private int kephriHealing = 0;
+	//TODO add Kephri split times
+	private int akkhaStartTick = -1;
+	private int zebakStartTick = -1;
+	private int obeliskStartTick = -1;
+	private int wardensP2StartTick = -1;
+	private int wardensP3StartTick = -1;
+	private int wardensP3Time;
+	private double wardensP3PersonalDamage;
+	private double wardensP3TotalDamage;
 
-	private int nyloStartTick = -1;
-	private int currentNylos;
-	private boolean nyloWavesFinished;
-	private boolean nyloCleanupFinished;
-	private boolean waveThisTick = false;
-	private int waveTime;
-	private int cleanupTime;
-	private int bossSpawnTime;
-	private int nyloWave = 0;
-
-	private int soteStartTick = -1;
-	private boolean sote66;
-	private int sote66time;
-	private boolean sote33;
-	private int sote33time;
-
-	private int xarpusStartTick = -1;
-	private int xarpusAcidTime;
-	private int xarpusRecoveryTime;
-	private int xarpusPreScreech;
-	private int xarpusPreScreechTotal;
-
-	private int verzikStartTick = -1;
-	private int verzikP1time;
-	private int verzikP2time;
-	private double verzikP1personal;
-	private double verzikP1total;
-	private double verzikP2personal;
-	private double verzikP2total;
-	private double verzikP2healed;
 
 	private final Map<String, Integer> personalDamage = new HashMap<>();
 	private final Map<String, Integer> totalDamage = new HashMap<>();
@@ -192,40 +196,22 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			return;
 		}
 
-		int tobVar = client.getVarbitValue(Varbits.THEATRE_OF_BLOOD);
-		tobInside = tobVar == 2 || tobVar == 3;
+		int region = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
+		toaInside = TOA_ROOM_IDS.contains(region);
 
 		int preciseTimerVar = client.getVarbitValue(PRECISE_TIMER);
 		preciseTimers = preciseTimerVar == 1 ;
 
-		if (!tobInside)
+		if (!toaInside)
 		{
 			resetAll();
-		}
-
-		int region = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
-		int status = client.getVarbitValue(THEATRE_OF_BLOOD_ROOM_STATUS);
-
-		if (status == 1 && region != prevRegion && region != SOTETSEG_MAZE_REGION)
-		{
-			prevRegion = region;
-		}
-
-		if (region == TOB_LOBBY)
-		{
-			resetMaiden();
-			resetBloat();
-			resetNylo();
-			resetSote();
-			resetXarpus();
-			resetVerzik();
 		}
 	}
 
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
-		if (!tobInside || event.getType() != ChatMessageType.GAMEMESSAGE)
+		if (!toaInside || event.getType() != ChatMessageType.GAMEMESSAGE)
 		{
 			return;
 		}
@@ -233,12 +219,37 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		String strippedMessage = Text.removeTags(event.getMessage());
 		List<String> messages = new ArrayList<>(Collections.emptyList());
 
-		if (MAIDEN_WAVE.matcher(strippedMessage).find())
+		if (BABA_STARTED.matcher(strippedMessage).find())
 		{
-			double personal = personalDamage.getOrDefault("The Maiden of Sugadinti", 0);
-			double total = totalDamage.getOrDefault("The Maiden of Sugadinti", 0);
-			int healed = totalHealing.getOrDefault("The Maiden of Sugadinti", 0);
-			String healing = "Total Healing - " + DMG_FORMAT.format(healed);
+			resetBaba();
+			babaStartTick = client.getTickCount();
+		}
+		else if (KEPHRI_STARTED.matcher(strippedMessage).find())
+		{
+			resetKephri();
+			kephriStartTick = client.getTickCount();
+		}
+		else if (AKKHA_STARTED.matcher(strippedMessage).find())
+		{
+			resetAkkha();
+			akkhaStartTick = client.getTickCount();
+		}
+		else if (ZEBAK_STARTED.matcher(strippedMessage).find())
+		{
+			resetZebak();
+			zebakStartTick = client.getTickCount();
+		}
+		else if (WARDENS_STARTED.matcher(strippedMessage).find())
+		{
+			resetObelisk();
+			resetWardensP2();
+			resetWardensP3();
+			obeliskStartTick = client.getTickCount();
+		}
+		else if (BABA_COMPLETE.matcher(strippedMessage).find())
+		{
+			double personal = personalDamage.getOrDefault("Ba-Ba", 0);
+			double total = totalDamage.getOrDefault("Ba-Ba", 0);
 			double percent = (personal / total) * 100;
 			int roomTicks;
 			String roomTime = "";
@@ -246,548 +257,514 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			String damage = "";
 			messages.clear();
 
-			if (maidenStartTick > 0)
+			if (babaStartTick > 0)
 			{
-				roomTicks = client.getTickCount() - maidenStartTick;
+				roomTicks = client.getTickCount() - babaStartTick;
 				roomTime = formatTime(roomTicks);
-				splits = "70% - " + formatTime(maiden70time) +
-					"</br>" +
-					"50% - " + formatTime(maiden50time) + " (" + formatTime(maiden50time - maiden70time) + ")" +
-					"</br>" +
-					"30% - " + formatTime(maiden30time) + " (" + formatTime(maiden30time - maiden50time) + ")" +
-					"</br>" +
-					"Room Complete - " + roomTime + " (" + formatTime(roomTicks - maiden30time) + ")";
-
-				if (config.chatboxSplits())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("70% - ")
-							.append(Color.RED, formatTime(maiden70time))
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("50% - ")
-							.append(Color.RED, formatTime(maiden50time) + " (" + formatTime(maiden50time - maiden70time) + ")")
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("30% - ")
-							.append(Color.RED, formatTime(maiden30time) + " (" + formatTime(maiden30time - maiden50time) + ")")
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Room Complete - ")
-							.append(Color.RED, roomTime + " (" + formatTime(roomTicks - maiden30time) + ")")
-							.build()
-					);
-				}
+				//TODO figure out how to determine split times
+//				splits = "66% - " + formatTime(baba66Time) +
+//						"</br>" +
+//						"33% - " + formatTime(baba33Time) + " (" + formatTime(baba33Time - baba66Time) + ")" +
+//						"</br>" +
+//						"Room Complete - " + roomTime + " (" + formatTime(roomTicks - baba33Time) + ")";
+//				if (config.chatboxSplits())
+//				{
+//					messages.add(
+//							new ChatMessageBuilder()
+//									.append(ChatColorType.NORMAL)
+//									.append("66% - ")
+//									.append(Color.RED, formatTime(baba66Time))
+//									.build()
+//					);
+//
+//					messages.add(
+//							new ChatMessageBuilder()
+//									.append(ChatColorType.NORMAL)
+//									.append("33% - ")
+//									.append(Color.RED, formatTime(baba33Time) + " (" + formatTime(baba33Time - baba66Time) + ")")
+//									.build()
+//					);
+//
+//					messages.add(
+//							new ChatMessageBuilder()
+//									.append(ChatColorType.NORMAL)
+//									.append("Room Complete - ")
+//									.append(Color.RED, roomTime + " (" + formatTime(roomTicks - baba33Time) + ")")
+//									.build()
+//					);
+//				}
 			}
 
 			if (personal > 0)
 			{
-				damage = "Personal Boss Damage - " + DMG_FORMAT.format(personal);
+				damage = "Boss Damage - " + DMG_FORMAT.format(personal);
 				if (config.chatboxDmg())
 				{
 					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Personal Boss Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-							.build()
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Ba-Ba - ")
+									.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+									.build()
 					);
 				}
 			}
-
-			if (config.chatboxHealed())
-			{
-				messages.add(
-					new ChatMessageBuilder()
-						.append(ChatColorType.NORMAL)
-						.append("Total Healing - ")
-						.append(Color.RED, DMG_FORMAT.format(healed))
-						.build()
-				);
-			}
-
-			maidenInfoBox = createInfoBox(MAIDEN_ID, "Maiden", roomTime, DECIMAL_FORMAT.format(percent), damage, splits, healing);
-			infoBoxManager.addInfoBox(maidenInfoBox);
-			resetMaiden();
+			//TODO add splits string
+			babaInfoBox = createInfoBox(BABA_PET_ID, "Ba-Ba", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, "");
+			infoBoxManager.addInfoBox(babaInfoBox);
+			resetBaba();
 		}
-		else if (BLOAT_WAVE.matcher(strippedMessage).find())
+		else if (KEPHRI_COMPLETE.matcher(strippedMessage).find())
 		{
-			double personal = personalDamage.getOrDefault("Pestilent Bloat", 0);
-			double total = totalDamage.getOrDefault("Pestilent Bloat", 0);
-			double percent = (personal / total) * 100;
-			Matcher m = BLOAT_WAVE.matcher(strippedMessage);
-			String roomTime = "";
-			if (m.find())
-			{
-				if (preciseTimers)
-				{
-					roomTime = m.group(1) + ":" + m.group(2) + "." + m.group(3).charAt(0);
-				}
-				else
-				{
-					roomTime = m.group(1) + ":" + m.group(2);
-				}
-			}
-			String damage = "";
-			messages.clear();
-
-			if (personal > 0)
-			{
-				damage = "Personal Boss Damage - " + DMG_FORMAT.format(personal);
-				if (config.chatboxDmg())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Personal Boss Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-							.build()
-					);
-				}
-			}
-
-			bloatInfoBox = createInfoBox(BLOAT_ID, "Bloat", roomTime, DECIMAL_FORMAT.format(percent), damage, "Room Complete - " + roomTime, "");
-			infoBoxManager.addInfoBox(bloatInfoBox);
-			resetBloat();
-		}
-		else if (NYLOCAS_WAVE.matcher(strippedMessage).find())
-		{
-			double personal = personalDamage.getOrDefault("Nylocas Vasilias", 0);
-			double total = totalDamage.getOrDefault("Nylocas Vasilias", 0);
-			int healed = totalHealing.getOrDefault("Nylocas Vasilias", 0);
-			String healing = "Total Healing - " + DMG_FORMAT.format(healed);
+			double personal = personalDamage.getOrDefault("Kephri", 0);
+			double total = totalDamage.getOrDefault("Kephri", 0);
 			double percent = (personal / total) * 100;
 			int roomTicks;
 			String roomTime = "";
 			String splits = "";
 			String damage = "";
+			//TODO per phase shield healing, save healing to map with key being phase which is updated in Split logic
+			String healing = "Total Shield Healed - " + DMG_FORMAT.format(kephriHealing);
 			messages.clear();
 
-			if (nyloStartTick > 0)
+			if (kephriStartTick > 0)
 			{
-				roomTicks = client.getTickCount() - nyloStartTick;
+				roomTicks = client.getTickCount() - kephriStartTick;
 				roomTime = formatTime(roomTicks);
-				splits = "Waves - " + formatTime(waveTime) +
-					"</br>" +
-					"Cleanup - " + formatTime(cleanupTime) + " (" + formatTime(cleanupTime - waveTime) + ")" +
-					"</br>" +
-					"Boss Spawn - " + formatTime(bossSpawnTime) + " (" + formatTime(bossSpawnTime - cleanupTime) + ")" +
-					"</br>" +
-					"Room Complete - " + roomTime + " (" + formatTime(roomTicks - bossSpawnTime) + ")";
-
-				if (config.chatboxSplits())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Waves - ")
-							.append(Color.RED, formatTime(waveTime))
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Cleanup - ")
-							.append(Color.RED, formatTime(cleanupTime) + " (" + formatTime(cleanupTime - waveTime) + ")")
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Boss Spawn - ")
-							.append(Color.RED, formatTime(bossSpawnTime) + " (" + formatTime(bossSpawnTime - cleanupTime) + ")")
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Room Complete - ")
-							.append(Color.RED, roomTime + " (" + formatTime(roomTicks - bossSpawnTime) + ")")
-							.build()
-					);
-				}
+				//TODO figure out how to determine split times, Kephri has 4 phases
+//				splits = "66% - " + formatTime(baba66Time) +
+//						"</br>" +
+//						"33% - " + formatTime(baba33Time) + " (" + formatTime(baba33Time - baba66Time) + ")" +
+//						"</br>" +
+//						"Room Complete - " + roomTime + " (" + formatTime(roomTicks - baba33Time) + ")";
+//				if (config.chatboxSplits())
+//				{
+//					messages.add(
+//							new ChatMessageBuilder()
+//									.append(ChatColorType.NORMAL)
+//									.append("66% - ")
+//									.append(Color.RED, formatTime(baba66Time))
+//									.build()
+//					);
+//
+//					messages.add(
+//							new ChatMessageBuilder()
+//									.append(ChatColorType.NORMAL)
+//									.append("33% - ")
+//									.append(Color.RED, formatTime(baba33Time) + " (" + formatTime(baba33Time - baba66Time) + ")")
+//									.build()
+//					);
+//
+//					messages.add(
+//							new ChatMessageBuilder()
+//									.append(ChatColorType.NORMAL)
+//									.append("Room Complete - ")
+//									.append(Color.RED, roomTime + " (" + formatTime(roomTicks - baba33Time) + ")")
+//									.build()
+//					);
+//				}
 			}
 
 			if (personal > 0)
 			{
-				damage = "Personal Boss Damage - " + DMG_FORMAT.format(personal);
+				damage = "Boss Damage - " + DMG_FORMAT.format(personal);
 				if (config.chatboxDmg())
 				{
 					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Personal Boss Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-							.build()
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Kephri - ")
+									.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+									.build()
+					);
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Total Shield Healed - ")
+									.append(Color.RED, DMG_FORMAT.format(kephriHealing))
+									.build()
 					);
 				}
 			}
-
-			if (config.chatboxHealed())
-			{
-				messages.add(
-					new ChatMessageBuilder()
-						.append(ChatColorType.NORMAL)
-						.append("Total Healing - ")
-						.append(Color.RED, DMG_FORMAT.format(healed))
-						.build()
-				);
-			}
-
-			nyloInfoBox = createInfoBox(NYLOCAS_ID, "Nylocas", roomTime, DECIMAL_FORMAT.format(percent), damage, splits, healing);
-			infoBoxManager.addInfoBox(nyloInfoBox);
-			resetNylo();
+			//TODO add splits string
+			kephriInfoBox = createInfoBox(KEPHRI_PET_ID, "Kephri", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, healing);
+			infoBoxManager.addInfoBox(kephriInfoBox);
+			resetKephri();
 		}
-		else if (SOTETSEG_WAVE.matcher(strippedMessage).find())
+		else if (AKKHA_COMPLETE.matcher(strippedMessage).find())
 		{
-			double personal = personalDamage.getOrDefault("Sotetseg", 0);
-			double total = totalDamage.getOrDefault("Sotetseg", 0);
+			double personal = personalDamage.getOrDefault("Akkha", 0);
+			double total = totalDamage.getOrDefault("Akkha", 0);
 			double percent = (personal / total) * 100;
 			int roomTicks;
 			String roomTime = "";
-			String splits = "";
 			String damage = "";
 			messages.clear();
 
-			if (soteStartTick > 0)
+			if (akkhaStartTick > 0)
 			{
-				roomTicks = client.getTickCount() - soteStartTick;
+				roomTicks = client.getTickCount() - akkhaStartTick;
 				roomTime = formatTime(roomTicks);
-				splits = "66% - " + formatTime(sote66time) +
-					"</br>" +
-					"33% - " + formatTime(sote33time) + " (" + formatTime(sote33time - sote66time) + ")" +
-					"</br>" +
-					"Room Complete - " + roomTime + " (" + formatTime(roomTicks - sote33time) + ")";
-
-				if (config.chatboxSplits())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("66% - ")
-							.append(Color.RED, formatTime(sote66time))
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("33% - ")
-							.append(Color.RED, formatTime(sote33time) + " (" + formatTime(sote33time - sote66time) + ")")
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Room Complete - ")
-							.append(Color.RED, roomTime + " (" + formatTime(roomTicks - sote33time) + ")")
-							.build()
-					);
-				}
 			}
 
 			if (personal > 0)
 			{
-				damage = "Personal Boss Damage - " + DMG_FORMAT.format(personal);
+				damage = "Boss Damage - " + DMG_FORMAT.format(personal);
 				if (config.chatboxDmg())
 				{
 					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Personal Boss Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-							.build()
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Akkha - ")
+									.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+									.build()
 					);
 				}
 			}
-
-			soteInfoBox = createInfoBox(SOTETSEG_ID, "Sotetseg", roomTime, DECIMAL_FORMAT.format(percent), damage, splits, "");
-			infoBoxManager.addInfoBox(soteInfoBox);
-			resetSote();
+			akkhaInfoBox = createInfoBox(AKKHA_PET_ID, "Akkha", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, "");
+			infoBoxManager.addInfoBox(akkhaInfoBox);
+			resetAkkha();
 		}
-		else if (XARPUS_WAVE.matcher(strippedMessage).find())
+		else if (ZEBAK_COMPLETE.matcher(strippedMessage).find())
 		{
-			double personal = personalDamage.getOrDefault("Xarpus", 0);
-			double total = totalDamage.getOrDefault("Xarpus", 0);
-			int healed = totalHealing.getOrDefault("Xarpus", 0);
-			String healing = "Total Healing - " + DMG_FORMAT.format(healed);
-			double xarpusPostScreech = personal - xarpusPreScreech;
-			double personalPercent = (personal / total) * 100;
-			double preScreechPercent = ((double) xarpusPreScreech / (double) xarpusPreScreechTotal) * 100;
-			double postScreechPercent = (xarpusPostScreech / (total - xarpusPreScreechTotal)) * 100;
-			int roomTicks;
-			String roomTime = "";
-			String splits = "";
-			String damage = "";
-			messages.clear();
-
-			if (xarpusStartTick > 0)
-			{
-				roomTicks = client.getTickCount() - xarpusStartTick;
-				roomTime = formatTime(roomTicks);
-				splits = "Recovery Phase - " + formatTime(xarpusRecoveryTime) +
-					"</br>" +
-					"Screech Time - " + formatTime(xarpusAcidTime) + " (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")" +
-					"</br>" +
-					"Room Complete - " + roomTime + " (" + formatTime(roomTicks - xarpusAcidTime) + ")";
-
-				if (config.chatboxSplits())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Recovery Phase - ")
-							.append(Color.RED, formatTime(xarpusRecoveryTime))
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Screech Time - ")
-							.append(Color.RED, formatTime(xarpusAcidTime) + " (" + formatTime(xarpusAcidTime - xarpusRecoveryTime) + ")")
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Room Complete - ")
-							.append(Color.RED, roomTime + " (" + formatTime(roomTicks - xarpusAcidTime) + ")")
-							.build()
-					);
-				}
-			}
-
-			if (xarpusPreScreech > 0)
-			{
-				damage += "Pre Screech Damage - " + DMG_FORMAT.format(xarpusPreScreech) + " (" + DECIMAL_FORMAT.format(preScreechPercent) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Pre Screech Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(xarpusPreScreech) + " (" + DECIMAL_FORMAT.format(preScreechPercent) + "%)")
-							.build()
-					);
-				}
-			}
-
-			if (xarpusPostScreech > 0)
-			{
-				damage += "Post Screech Damage - " + DMG_FORMAT.format(xarpusPostScreech) + " (" + DECIMAL_FORMAT.format(postScreechPercent) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Post Screech Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(xarpusPostScreech) + " (" + DECIMAL_FORMAT.format(postScreechPercent) + "%)")
-							.build()
-					);
-				}
-			}
-
-			if (personal > 0)
-			{
-				damage += "Personal Boss Damage - " + DMG_FORMAT.format(personal);
-				if (config.chatboxDmg())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Personal Boss Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(personalPercent) + "%)")
-							.build()
-					);
-				}
-			}
-
-			if (config.chatboxHealed())
-			{
-				messages.add(
-					new ChatMessageBuilder()
-						.append(ChatColorType.NORMAL)
-						.append("Total Healed - ")
-						.append(Color.RED, DMG_FORMAT.format(healed))
-						.build()
-				);
-			}
-
-			xarpusInfoBox = createInfoBox(XARPUS_ID, "Xarpus", roomTime, DECIMAL_FORMAT.format(personalPercent), damage, splits, healing);
-			infoBoxManager.addInfoBox(xarpusInfoBox);
-			resetXarpus();
-		}
-		else if (COMPLETION.matcher(strippedMessage).find())
-		{
-			double personal = personalDamage.getOrDefault("Verzik Vitur", 0) ;
-			double total = totalDamage.getOrDefault("Verzik Vitur", 0);
-			double p3personal = personalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1personal + verzikP2personal);
-			double p3total = totalDamage.getOrDefault("Verzik Vitur", 0) - (verzikP1total + verzikP2total);
-			double p3healed = totalHealing.getOrDefault("Verzik Vitur", 0) - verzikP2healed;
-			double healed = totalHealing.getOrDefault("Verzik Vitur", 0);
-			double p3percent = (p3personal / p3total) * 100;
-			double p1percent = (verzikP1personal / verzikP1total) * 100;
-			double p2percent = (verzikP2personal / verzikP2total) * 100;
+			double personal = personalDamage.getOrDefault("Zebak", 0);
+			double total = totalDamage.getOrDefault("Zebak", 0);
 			double percent = (personal / total) * 100;
 			int roomTicks;
 			String roomTime = "";
-			String splits = "";
 			String damage = "";
-			String healing = "P2 Healed - " + DMG_FORMAT.format(verzikP2healed) +
-				"</br>" +
-				"P3 Healed - " + DMG_FORMAT.format(p3healed) +
-				"</br>" +
-				"Total Healed - " + DMG_FORMAT.format(healed);
 			messages.clear();
 
-			if (verzikStartTick > 0)
+			if (zebakStartTick > 0)
 			{
-				roomTicks = client.getTickCount() - verzikStartTick;
+				roomTicks = client.getTickCount() - zebakStartTick;
 				roomTime = formatTime(roomTicks);
-				splits = "P1 - " + formatTime(verzikP1time) +
-					"</br>" +
-					"P2 - " + formatTime(verzikP2time) + " (" + formatTime(verzikP2time - verzikP1time) + ")" +
-					"</br>" +
-					"P3 - " + roomTime + " (" + formatTime(roomTicks - verzikP2time) + ")";
-
-				if (config.chatboxSplits())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("P1 - ")
-							.append(Color.RED, formatTime(verzikP1time))
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("P2 - ")
-							.append(Color.RED, formatTime(verzikP2time) + " (" + formatTime(verzikP2time - verzikP1time) + ")")
-							.build()
-					);
-
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("P3 - ")
-							.append(Color.RED, roomTime + " (" + formatTime(roomTicks - verzikP2time) + ")")
-							.build()
-					);
-				}
-			}
-
-			if (verzikP1personal > 0)
-			{
-				damage += "P1 Personal Damage - " + DMG_FORMAT.format(verzikP1personal) + " (" + DECIMAL_FORMAT.format(p1percent) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("P1 Personal Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(verzikP1personal) + " (" + DECIMAL_FORMAT.format(p1percent) + "%)")
-							.build()
-					);
-				}
-			}
-
-			if (verzikP2personal > 0)
-			{
-				damage += "P2 Personal Damage - " + DMG_FORMAT.format(verzikP2personal) + " (" + DECIMAL_FORMAT.format(p2percent) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("P2 Personal Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(verzikP2personal) + " (" + DECIMAL_FORMAT.format(p2percent) + "%)")
-							.build()
-					);
-				}
-			}
-
-			if (p3personal > 0)
-			{
-				damage += "P3 Personal Damage - " + DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(p3percent) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("P3 Personal Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(p3personal) + " (" + DECIMAL_FORMAT.format(p3percent) + "%)")
-							.build()
-					);
-				}
 			}
 
 			if (personal > 0)
 			{
-				damage += "Total Personal Damage - " + DMG_FORMAT.format(personal);
+				damage = "Boss Damage - " + DMG_FORMAT.format(personal);
 				if (config.chatboxDmg())
 				{
 					messages.add(
-						new ChatMessageBuilder()
-							.append(ChatColorType.NORMAL)
-							.append("Total Personal Damage - ")
-							.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-							.build()
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Zebak - ")
+									.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+									.build()
+					);
+				}
+			}
+			zebakInfoBox = createInfoBox(ZEBAK_PET_ID, "Zebak", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, "");
+			infoBoxManager.addInfoBox(zebakInfoBox);
+			resetZebak();
+		}
+		else if (OBELISK_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find() || OBELISK_COMPLETE_ELIDINIS_SPAWNS.matcher(strippedMessage).find())
+		{
+			double personal = personalDamage.getOrDefault("Obelisk", 0);
+			double total = totalDamage.getOrDefault("Obelisk", 0);
+			double percent = (personal / total) * 100;
+			int roomTicks;
+			String roomTime = "";
+			String damage = "";
+			messages.clear();
+
+			if (obeliskStartTick > 0)
+			{
+				roomTicks = client.getTickCount() - obeliskStartTick;
+				roomTime = formatTime(roomTicks);
+			}
+
+			if (personal > 0)
+			{
+				damage = "Boss Damage - " + DMG_FORMAT.format(personal);
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Obelisk - ")
+									.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+									.build()
+					);
+				}
+			}
+			obeliskInfoBox = createInfoBox(OBELISK_ICON_ID, "Obelisk", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, "");
+			infoBoxManager.addInfoBox(obeliskInfoBox);
+			resetObelisk();
+			wardensP2StartTick = client.getTickCount();
+		}
+		else if (WARDENS_P2_COMPLETE_ELIDINIS_SPAWNS.matcher(strippedMessage).find())
+		{
+			double personalCoreDamage = personalDamage.getOrDefault("Core", 0);
+			double totalCoreDamage = totalDamage.getOrDefault("Core", 0);
+			double percentCoreDamage = (personalCoreDamage / totalCoreDamage) * 100;
+
+			double personalShieldDamage = personalDamage.getOrDefault("Tumeken's Warden Shielded", 0);
+			double totalShieldDamage = totalDamage.getOrDefault("Tumeken's Warden Shielded", 0);
+			double percentShieldDamage = (personalShieldDamage / totalShieldDamage) * 100;
+
+			double personalTotalDamage = personalCoreDamage + personalShieldDamage;
+			double totalDamage = totalCoreDamage + totalShieldDamage;
+			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
+
+			int roomTicks;
+			String roomTime = "";
+			String damage = "Damage Dealt:</br>";
+			messages.clear();
+
+			if (wardensP2StartTick > 0)
+			{
+				roomTicks = client.getTickCount() - wardensP2StartTick;
+				roomTime = formatTime(roomTicks);
+			}
+
+			if (personalShieldDamage > 0)
+			{
+				damage += "Tumeken's Warden - " + DMG_FORMAT.format(personalShieldDamage) + " (" + DECIMAL_FORMAT.format(percentShieldDamage) + "%)" + "</br>";
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Tumeken's Warden - ")
+									.append(Color.RED, DMG_FORMAT.format(personalShieldDamage) + " (" + DECIMAL_FORMAT.format(percentShieldDamage) + "%)")
+									.build()
 					);
 				}
 			}
 
-			if (config.chatboxHealed())
+			if (personalCoreDamage > 0)
 			{
-				messages.add(
-					new ChatMessageBuilder()
-						.append(ChatColorType.NORMAL)
-						.append("P2 Healed - ")
-						.append(Color.RED, DMG_FORMAT.format(verzikP2healed))
-						.build()
-				);
-
-				messages.add(
-					new ChatMessageBuilder()
-						.append(ChatColorType.NORMAL)
-						.append("P3 Healed - ")
-						.append(Color.RED, DMG_FORMAT.format(p3healed))
-						.build()
-				);
-
-				messages.add(
-					new ChatMessageBuilder()
-						.append(ChatColorType.NORMAL)
-						.append("Total Healed - ")
-						.append(Color.RED, DMG_FORMAT.format(healed))
-						.build()
-				);
+				damage += "Core - " + DMG_FORMAT.format(personalCoreDamage) + " (" + DECIMAL_FORMAT.format(percentCoreDamage) + "%)" + "</br>";
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Core - ")
+									.append(Color.RED, DMG_FORMAT.format(personalCoreDamage) + " (" + DECIMAL_FORMAT.format(percentCoreDamage) + "%)")
+									.build()
+					);
+				}
 			}
 
-			verzikInfoBox = createInfoBox(VERZIK_ID, "Verzik", roomTime, DECIMAL_FORMAT.format(percent), damage, splits, healing);
-			infoBoxManager.addInfoBox(verzikInfoBox);
-			resetVerzik();
+			if (personalTotalDamage > 0)
+			{
+				damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Total damage dealt - ")
+									.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)")
+									.build()
+					);
+				}
+			}
+
+			wardensP2InfoBox = createInfoBox(TUMEKENS_WARDEN_PET_ID, "P2 Tumeken's Warden", roomTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomTime, "");
+			infoBoxManager.addInfoBox(wardensP2InfoBox);
+			resetWardensP2();
+			wardensP3StartTick = client.getTickCount();
+			fightingElidinisWardenInP3 = true;
+		}
+		else if (WARDENS_P2_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find())
+		{
+			double personalCoreDamage = personalDamage.getOrDefault("Core", 0);
+			double totalCoreDamage = totalDamage.getOrDefault("Core", 0);
+			double percentCoreDamage = (personalCoreDamage / totalCoreDamage) * 100;
+
+			double personalShieldDamage = personalDamage.getOrDefault("Elidinis' Warden Shielded", 0);
+			double totalShieldDamage = totalDamage.getOrDefault("Elidinis' Warden Shielded", 0);
+			double percentShieldDamage = (personalShieldDamage / totalShieldDamage) * 100;
+
+			double personalTotalDamage = personalCoreDamage + personalShieldDamage;
+			double totalDamage = totalCoreDamage + totalShieldDamage;
+			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
+
+			int roomTicks;
+			String roomTime = "";
+			String damage = "Damage Dealt:</br>";
+			messages.clear();
+
+			if (wardensP2StartTick > 0)
+			{
+				roomTicks = client.getTickCount() - wardensP2StartTick;
+				roomTime = formatTime(roomTicks);
+			}
+
+			if (personalShieldDamage > 0)
+			{
+				damage += "Elidinis' Warden - " + DMG_FORMAT.format(personalShieldDamage) + " (" + DECIMAL_FORMAT.format(percentShieldDamage) + "%)" + "</br>";
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Elidinis' Warden - ")
+									.append(Color.RED, DMG_FORMAT.format(personalShieldDamage) + " (" + DECIMAL_FORMAT.format(percentShieldDamage) + "%)")
+									.build()
+					);
+				}
+			}
+
+			if (personalCoreDamage > 0)
+			{
+				damage += "Core - " + DMG_FORMAT.format(personalCoreDamage) + " (" + DECIMAL_FORMAT.format(percentCoreDamage) + "%)" + "</br>";
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Core - ")
+									.append(Color.RED, DMG_FORMAT.format(personalCoreDamage) + " (" + DECIMAL_FORMAT.format(percentCoreDamage) + "%)")
+									.build()
+					);
+				}
+			}
+
+			if (personalTotalDamage > 0)
+			{
+				damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Total damage dealt - ")
+									.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)")
+									.build()
+					);
+				}
+			}
+			wardensP2InfoBox = createInfoBox(ELIDNIS_WARDEN_PET_ID, "P2 Elidinis' Warden", roomTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomTime, "");
+			infoBoxManager.addInfoBox(wardensP2InfoBox);
+			resetWardensP2();
+			wardensP3StartTick = client.getTickCount();
+			fightingElidinisWardenInP3 = false;
+		}
+		else if (WARDENS_COMPLETE.matcher(strippedMessage).find())
+		{
+			double personalTotalDamage;
+			double totalDamage;
+			int infoBoxIconId;
+			String bossName;
+
+			if (fightingElidinisWardenInP3)
+			{
+				personalTotalDamage = personalDamage.getOrDefault("Elidinis' Warden", 0);
+				totalDamage = this.totalDamage.getOrDefault("Elidinis' Warden", 0);
+				infoBoxIconId = ELIDNIS_WARDEN_PET_ID;
+				bossName = "P3 Elidinis' Warden";
+			}
+			else
+			{
+				personalTotalDamage = personalDamage.getOrDefault("Tumeken's Warden", 0);
+				totalDamage = this.totalDamage.getOrDefault("Tumeken's Warden", 0);
+				infoBoxIconId = TUMEKENS_WARDEN_PET_ID;
+				bossName = "P3 Tumeken's Warden";
+			}
+
+			double wardensP4PersonalDamage = personalTotalDamage - wardensP3PersonalDamage;
+			double wardensP4TotalDamage = totalDamage - wardensP3TotalDamage;
+			double wardensP3Percent = (wardensP3PersonalDamage / wardensP3TotalDamage) * 100;
+			double wardensP4Percent = (wardensP4PersonalDamage / wardensP4TotalDamage) * 100;
+			double totalPercent = (personalTotalDamage / totalDamage) * 100;
+			int roomTicks;
+			int wardensEnrageTime;
+			String totalKillTime = "";
+			String splits = "Times:</br>";
+			String damage = "Damage Dealt:</br>";
+			messages.clear();
+
+			if (wardensP3StartTick > 0)
+			{
+				roomTicks = client.getTickCount() - wardensP3StartTick;
+				totalKillTime = formatTime(roomTicks);
+				wardensEnrageTime = roomTicks - wardensP3Time;
+				splits = "P3 to Enrage - " + formatTime(wardensP3Time) +
+						"</br>" +
+						"Enrage to kill - " + formatTime(wardensEnrageTime) +
+						"</br>" +
+						"Total - " + totalKillTime;
+
+				if (config.chatboxSplits())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("P3 to Enrage - ")
+									.append(Color.RED, formatTime(wardensP3Time))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Enrage to kill - ")
+									.append(Color.RED, formatTime(wardensEnrageTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Total time - ")
+									.append(Color.RED, totalKillTime)
+									.build()
+					);
+				}
+			}
+
+			if (wardensP3PersonalDamage > 0)
+			{
+				damage += "P3 to Enrage - " + DMG_FORMAT.format(wardensP3PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP3Percent) + "%)" + "</br>";
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("P3 to Enrage damage dealt - ")
+									.append(Color.RED, DMG_FORMAT.format(wardensP3PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP3Percent) + "%)")
+									.build()
+					);
+				}
+			}
+
+			if (wardensP4PersonalDamage > 0)
+			{
+				damage += "Enrage to kill - " + DMG_FORMAT.format(wardensP4PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP4Percent) + "%)" + "</br>";
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Enrage Damage Dealt - ")
+									.append(Color.RED, DMG_FORMAT.format(wardensP4PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP4Percent) + "%)")
+									.build()
+					);
+				}
+			}
+
+			if (personalTotalDamage > 0)
+			{
+				damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Total damage dealt - ")
+									.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(totalPercent) + "%)")
+									.build()
+					);
+				}
+			}
+			wardensP3InfoBox = createInfoBox(infoBoxIconId, bossName, totalKillTime, DECIMAL_FORMAT.format(totalPercent), damage, splits, "");
+			infoBoxManager.addInfoBox(wardensP3InfoBox);
+			resetWardensP3();
 		}
 
 		if (!messages.isEmpty())
@@ -803,196 +780,81 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 	}
 
-	@Subscribe
-	public void onNpcChanged(NpcChanged event)
-	{
-		if (!tobInside)
-		{
-			return;
-		}
+//	@Subscribe
+//	public void onNpcChanged(NpcChanged event)
+//	{
+//		if (!toaInside)
+//		{
+//			return;
+//		}
+//
+//		NPC npc = event.getNpc();
+//		int npcId = npc.getId();
+//		//TODO using form change to calc phase times, might work for Kephri/Baba?
+//		switch (npcId)
+//		{
+//
+//		}
+//	}
 
-		NPC npc = event.getNpc();
-		int npcId = npc.getId();
+//	@Subscribe
+//	public void onNpcSpawned(NpcSpawned event)
+//	{
+//		if (!toaInside)
+//		{
+//			return;
+//		}
+//
+//		NPC npc = event.getNpc();
+//		int npcId = npc.getId();
+//
+//		switch (npcId)
+//		{
+//			case NpcID.ELIDINIS_WARDEN_11753: //P2 Elidnis' Warden vulnerable to magic
+//				wardensP1Time = client.getTickCount() - wardensStartTick;
+//				wardensP1Personal = personalDamage.getOrDefault("Obelisk", 0);
+//				wardensP1Total = totalDamage.getOrDefault("Obelisk", 0);
+//				foughtElidinisWardenInP3 = false;
+//				break;
+//			case NpcID.TUMEKENS_WARDEN_11757: //P2 Tumeken's Warden vulnerable to range
+//				wardensP1Time = client.getTickCount() - wardensStartTick;
+//				wardensP1Personal = personalDamage.getOrDefault("Obelisk", 0);
+//				wardensP1Total = totalDamage.getOrDefault("Obelisk", 0);
+//				foughtElidinisWardenInP3 = true;
+//				break;
+//			case NpcID.ELIDINIS_WARDEN_11761: //P3 Elidnis' Warden
+//				wardensP2Time = client.getTickCount() - wardensStartTick;
+//				wardensP2Personal = personalDamage.getOrDefault("Tumeken's Warden", 0) - wardensP1Personal;
+//				wardensP2Total = totalDamage.getOrDefault("Tumeken's Warden", 0) - wardensP1Total;
+//				break;
+//			case NpcID.TUMEKENS_WARDEN_11762: //P3 Tumeken's Warden
+//				wardensP2Time = client.getTickCount() - wardensStartTick;
+//				wardensP2Personal = personalDamage.getOrDefault("Elidinis' Warden", 0) - wardensP1Personal;
+//				wardensP2Total = totalDamage.getOrDefault("Elidinis' Warden", 0) - wardensP1Total;
+//				break;
+//		}
+//
+//	}
 
-		switch (npcId)
-		{
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_8361:
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_10815:
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_10823:
-				if (maidenStartTick != -1)
-				{
-					maiden70time = client.getTickCount() - maidenStartTick;
-				}
-				break;
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_8362:
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_10816:
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_10824:
-				if (maidenStartTick != -1)
-				{
-					maiden50time = client.getTickCount() - maidenStartTick;
-				}
-				break;
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_8363:
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_10817:
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_10825:
-				if (maidenStartTick != -1)
-				{
-					maiden30time = client.getTickCount() - maidenStartTick;
-				}
-				break;
-			case NpcID.SOTETSEG_8388:
-			case NpcID.SOTETSEG_10865:
-			case NpcID.SOTETSEG_10868:
-				if (soteStartTick == -1)
-				{
-					soteStartTick = client.getTickCount();
-				}
-				break;
-			case NpcID.SOTETSEG:
-			case NpcID.SOTETSEG_10864:
-			case NpcID.SOTETSEG_10867:
-				if (soteStartTick != -1)
-				{
-					if (!sote66)
-					{
-						sote66time = client.getTickCount() - soteStartTick;
-						sote66 = true;
-					}
-					else if (!sote33)
-					{
-						sote33time = client.getTickCount() - soteStartTick;
-						sote33 = true;
-					}
-				}
-				break;
-			case NpcID.XARPUS_8339:
-			case NpcID.XARPUS_10767:
-			case NpcID.XARPUS_10771:
-				xarpusStartTick = client.getTickCount();
-				break;
-			case NpcID.XARPUS_8340:
-			case NpcID.XARPUS_10768:
-			case NpcID.XARPUS_10772:
-				xarpusRecoveryTime = client.getTickCount() - xarpusStartTick;
-				break;
-			case NpcID.VERZIK_VITUR_8370:
-			case NpcID.VERZIK_VITUR_10831:
-			case NpcID.VERZIK_VITUR_10848:
-				verzikStartTick = client.getTickCount();
-				break;
-		}
-	}
+//	@Subscribe
+//	public void onNpcDespawned(NpcDespawned event)
+//	{
+//		if (!toaInside)
+//		{
+//			return;
+//		}
+//
+//	}
 
-	@Subscribe
-	public void onNpcSpawned(NpcSpawned event)
-	{
-		if (!tobInside)
-		{
-			return;
-		}
-
-		NPC npc = event.getNpc();
-		int npcId = npc.getId();
-
-		switch (npcId)
-		{
-			case NpcID.THE_MAIDEN_OF_SUGADINTI:
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_10814:
-			case NpcID.THE_MAIDEN_OF_SUGADINTI_10822:
-				maidenStartTick = client.getTickCount();
-				break;
-			case NullNpcID.NULL_8358:
-			case NullNpcID.NULL_10790:
-			case NullNpcID.NULL_10811:
-				nyloStartTick = client.getTickCount();
-				break;
-			case NpcID.NYLOCAS_VASILIAS:
-			case NpcID.NYLOCAS_VASILIAS_10786:
-			case NpcID.NYLOCAS_VASILIAS_10807:
-				bossSpawnTime = client.getTickCount() - nyloStartTick;
-				break;
-			case NpcID.VERZIK_VITUR_8371:
-			case NpcID.VERZIK_VITUR_10832:
-			case NpcID.VERZIK_VITUR_10849:
-				verzikP1time = client.getTickCount() - verzikStartTick;
-				verzikP1personal = personalDamage.getOrDefault("Verzik Vitur", 0);
-				verzikP1total = totalDamage.getOrDefault("Verzik Vitur", 0);
-				break;
-			case NpcID.VERZIK_VITUR_8373:
-			case NpcID.VERZIK_VITUR_10834:
-			case NpcID.VERZIK_VITUR_10851:
-				verzikP2time = client.getTickCount() - verzikStartTick;
-				verzikP2personal = personalDamage.getOrDefault("Verzik Vitur", 0) - verzikP1personal;
-				verzikP2total = totalDamage.getOrDefault("Verzik Vitur", 0) - verzikP1total;
-				verzikP2healed = totalHealing.getOrDefault("Verzik Vitur", 0);
-				break;
-		}
-
-		if (!NYLOCAS_IDS.contains(npcId) || prevRegion != NYLOCAS_REGION)
-		{
-			return;
-		}
-
-		currentNylos++;
-		WorldPoint worldPoint = WorldPoint.fromLocalInstance(client, npc.getLocalLocation());
-		Point spawnLoc = new Point(worldPoint.getRegionX(), worldPoint.getRegionY());
-
-		if (!NYLOCAS_VALID_SPAWNS.contains(spawnLoc))
-		{
-			return;
-		}
-
-		if (!waveThisTick)
-		{
-			nyloWave++;
-			waveThisTick = true;
-		}
-
-		if (nyloWave == NYLOCAS_WAVES_TOTAL && !nyloWavesFinished)
-		{
-			waveTime = client.getTickCount() - nyloStartTick;
-			nyloWavesFinished = true;
-		}
-	}
-
-	@Subscribe
-	public void onNpcDespawned(NpcDespawned event)
-	{
-		if (!tobInside)
-		{
-			return;
-		}
-
-		NPC npc = event.getNpc();
-		int npcId = npc.getId();
-
-		if (!NYLOCAS_IDS.contains(npcId) || prevRegion != NYLOCAS_REGION)
-		{
-			return;
-		}
-
-		currentNylos--;
-
-		if (nyloWavesFinished && !nyloCleanupFinished && currentNylos == 0)
-		{
-			cleanupTime = client.getTickCount() - nyloStartTick;
-			nyloCleanupFinished = true;
-		}
-	}
-
-	@Subscribe
-	public void onGameTick(GameTick event)
-	{
-		if (!tobInside)
-		{
-			return;
-		}
-
-		if (waveThisTick)
-		{
-			waveThisTick = false;
-		}
-	}
+//	@Subscribe
+//	public void onGameTick(GameTick event)
+//	{
+//		if (!toaInside)
+//		{
+//			return;
+//		}
+//
+//	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
@@ -1004,12 +866,17 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		boolean prevInstance = instanced;
 		instanced = client.isInInstancedRegion();
-		if (prevInstance && !instanced)
+
+		if (prevInstance && !instanced) //going from raid into lobby
+		{
+			resetAll();
+		}
+		else if (!prevInstance && !instanced) //going from lobby into raid
 		{
 			resetAll();
 			resetAllInfoBoxes();
 		}
-		else if (!prevInstance && instanced)
+		else if (!prevInstance && instanced) //going from lobby into anywhere else
 		{
 			resetAll();
 			resetAllInfoBoxes();
@@ -1019,7 +886,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		if (!tobInside)
+		if (!toaInside)
 		{
 			return;
 		}
@@ -1031,17 +898,21 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 
 		NPC npc = (NPC) actor;
-		String npcName = npc.getName();
+		String npcName = Text.removeTags(npc.getName());
+
 		if (npcName == null || !(BOSS_NAMES.contains(npcName)))
 		{
 			return;
 		}
 
-		npcName = Text.removeTags(npcName);
 		Hitsplat hitsplat = event.getHitsplat();
 
-		if (hitsplat.isMine())
+		if (hitsplat.isMine() || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_ME_HITSPLAT_ID || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID)
 		{
+			if(hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_ME_HITSPLAT_ID || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID)
+			{
+				npcName = npcName + " Shielded";
+			}
 			int myDmg = personalDamage.getOrDefault(npcName, 0);
 			int totalDmg = totalDamage.getOrDefault(npcName, 0);
 			myDmg += hitsplat.getAmount();
@@ -1049,8 +920,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			personalDamage.put(npcName, myDmg);
 			totalDamage.put(npcName, totalDmg);
 		}
-		else if (hitsplat.isOthers())
+		else if (hitsplat.isOthers() || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID)
 		{
+			if(hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID)
+			{
+				npcName = npcName + " Shielded";
+			}
 			int totalDmg = totalDamage.getOrDefault(npcName, 0);
 			totalDmg += hitsplat.getAmount();
 			totalDamage.put(npcName, totalDmg);
@@ -1060,27 +935,34 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			int healed = totalHealing.getOrDefault(npcName, 0);
 			healed += hitsplat.getAmount();
 			totalHealing.put(npcName, healed);
+
+			if (npcName.equals("Elidinis' Warden") || npcName.equals("Tumeken's Warden"))
+			{
+				if (wardensP4EnrageHeal) //the Wardens heal twice, once at the very start of Phase 3 and once when they enter enrage phase/phase 4
+				{
+					wardensP3Time = client.getTickCount() - wardensP3StartTick;
+					wardensP3PersonalDamage = personalDamage.getOrDefault(npcName, 0);
+					wardensP3TotalDamage = totalDamage.getOrDefault(npcName, 0);
+					wardensP4EnrageHeal = false;
+				}
+				wardensP4EnrageHeal = true;
+			}
+		}
+		else if (hitsplat.getHitsplatType() == KEPHRI_SHIELDED_HEALING_HITSPLAT_ID && npcName.equals("Kephri")) //Hitsplat ID is shared with Palm of Resourcefulness
+		{
+			kephriHealing += hitsplat.getAmount();
 		}
 	}
 
-	@Subscribe
-	public void onOverheadTextChanged(OverheadTextChanged event)
-	{
-		Actor npc = event.getActor();
-		if (!(npc instanceof NPC) || !tobInside)
-		{
-			return;
-		}
-
-		String overheadText = event.getOverheadText();
-		String npcName = npc.getName();
-		if (npcName != null && npcName.equals("Xarpus") && overheadText.equals("Screeeeech!"))
-		{
-			xarpusAcidTime = client.getTickCount() - xarpusStartTick;
-			xarpusPreScreech = personalDamage.getOrDefault(npcName, 0);
-			xarpusPreScreechTotal = totalDamage.getOrDefault(npcName, 0);
-		}
-	}
+//	@Subscribe
+//	public void onOverheadTextChanged(OverheadTextChanged event)
+//	{
+//		Actor npc = event.getActor();
+//		if (!(npc instanceof NPC) || !toaInside)
+//		{
+//			return;
+//		}
+//	}
 
 	private TombsOfAmascutStatsStatsInfoBox createInfoBox(int itemId, String room, String time, String percent, String damage, String splits, String healed)
 	{
@@ -1108,71 +990,58 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 	}
 
-	private void resetMaiden()
+	private void resetBaba()
 	{
-		maidenStartTick = -1;
-		maiden70time = 0;
-		maiden50time = 0;
-		maiden30time = 0;
-		personalDamage.remove("The Maiden of Sugadinti");
-		totalDamage.remove("The Maiden of Sugadinti");
-		totalHealing.remove("The Maiden of Sugadinti");
+		babaStartTick = -1;
+		personalDamage.remove("Ba-Ba");
+		totalDamage.remove("Ba-Ba");
 	}
 
-	private void resetBloat()
+	private void resetKephri()
 	{
-		personalDamage.remove("Pestilent Bloat");
-		totalDamage.remove("Pestilent Bloat");
+		kephriStartTick = -1;
+		kephriHealing = 0;
+		personalDamage.remove("Kephri");
+		totalDamage.remove("Kephri");
 	}
 
-	private void resetNylo()
+	private void resetAkkha()
 	{
-		nyloStartTick = -1;
-		currentNylos = 0;
-		nyloWavesFinished = false;
-		nyloCleanupFinished = false;
-		waveTime = 0;
-		cleanupTime = 0;
-		bossSpawnTime = 0;
-		waveThisTick = false;
-		nyloWave = 0;
-		personalDamage.remove("Nylocas Vasilias");
-		totalDamage.remove("Nylocas Vasilias");
+		akkhaStartTick = -1;
+		personalDamage.remove("Akkha");
+		totalDamage.remove("Akkha");
 	}
 
-	private void resetSote()
+	private void resetZebak()
 	{
-		soteStartTick = -1;
-		sote66 = false;
-		sote66time = 0;
-		sote33 = false;
-		sote33time = 0;
-		personalDamage.remove("Sotetseg");
-		totalDamage.remove("Sotetseg");
+		zebakStartTick = -1;
+		personalDamage.remove("Zebak");
+		totalDamage.remove("Zebak");
 	}
 
-	private void resetXarpus()
+	private void resetObelisk()
 	{
-		xarpusStartTick = -1;
-		xarpusRecoveryTime = 0;
-		xarpusAcidTime = 0;
-		xarpusPreScreech = 0;
-		xarpusPreScreechTotal = 0;
-		personalDamage.remove("Xarpus");
-		totalDamage.remove("Xarpus");
-		totalHealing.remove("Xarpus");
+		obeliskStartTick = -1;
+		personalDamage.remove("Obelisk");
+		totalDamage.remove("Obelisk");
 	}
 
-	private void resetVerzik()
+	private void resetWardensP2()
 	{
-		verzikStartTick = -1;
-		verzikP1time = 0;
-		verzikP2time = 0;
-		verzikP1personal = 0;
-		verzikP1total = 0;
-		verzikP2personal = 0;
-		verzikP2total = 0;
-		verzikP2healed = 0;
+		wardensP2StartTick = -1;
+		personalDamage.remove("Elidinis' Warden");
+		totalDamage.remove("Elidinis' Warden");
+		personalDamage.remove("Tumeken's Warden");
+		totalDamage.remove("Tumeken's Warden");
+	}
+
+	private void resetWardensP3()
+	{
+		wardensP3StartTick = -1;
+		wardensP3Time = 0;
+		wardensP3PersonalDamage = 0;
+		wardensP3TotalDamage = 0;
+		wardensP4EnrageHeal = false;
 		personalDamage.clear();
 		totalDamage.clear();
 		totalHealing.clear();
@@ -1180,21 +1049,23 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 	private void resetAll()
 	{
-		resetMaiden();
-		resetBloat();
-		resetNylo();
-		resetSote();
-		resetXarpus();
-		resetVerzik();
+		resetBaba();
+		resetKephri();
+		resetAkkha();
+		resetZebak();
+		resetObelisk();
+		resetWardensP2();
+		resetWardensP3();
 	}
 
 	private void resetAllInfoBoxes()
 	{
-		infoBoxManager.removeInfoBox(maidenInfoBox);
-		infoBoxManager.removeInfoBox(bloatInfoBox);
-		infoBoxManager.removeInfoBox(nyloInfoBox);
-		infoBoxManager.removeInfoBox(soteInfoBox);
-		infoBoxManager.removeInfoBox(xarpusInfoBox);
-		infoBoxManager.removeInfoBox(verzikInfoBox);
+		infoBoxManager.removeInfoBox(babaInfoBox);
+		infoBoxManager.removeInfoBox(kephriInfoBox);
+		infoBoxManager.removeInfoBox(akkhaInfoBox);
+		infoBoxManager.removeInfoBox(zebakInfoBox);
+		infoBoxManager.removeInfoBox(obeliskInfoBox);
+		infoBoxManager.removeInfoBox(wardensP2InfoBox);
+		infoBoxManager.removeInfoBox(wardensP3InfoBox);
 	}
 }

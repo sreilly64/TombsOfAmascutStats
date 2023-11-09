@@ -27,17 +27,17 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(
-		keyName = "chatboxHealed",
-		name = "Print Heals To Chat",
-		description = "Print amount healed to chat",
-		section = chatSettings,
-		position = 1
-	)
-	default boolean chatboxHealed()
-	{
-		return true;
-	}
+//	@ConfigItem(
+//		keyName = "chatboxHealed",
+//		name = "Print Heals To Chat",
+//		description = "Print amount healed to chat",
+//		section = chatSettings,
+//		position = 1
+//	)
+//	default boolean chatboxHealed()
+//	{
+//		return true;
+//	}
 
 	@ConfigItem(
 		keyName = "chatboxSplits",
@@ -79,7 +79,7 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 	)
 	default InfoBoxText infoBoxText()
 	{
-		return InfoBoxText.TIME;
+		return InfoBoxText.DAMAGE_PERCENT;
 	}
 
 	@ConfigItem(
@@ -106,17 +106,17 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(
-		keyName = "infoBoxTooltipHealed",
-		name = "Info Box Tooltip Healed",
-		description = "Display amount healed in the info box tooltip",
-		section = infoBoxSettings,
-		position = 4
-	)
-	default boolean infoBoxTooltipHealed()
-	{
-		return true;
-	}
+//	@ConfigItem(
+//		keyName = "infoBoxTooltipHealed",
+//		name = "Info Box Tooltip Healed",
+//		description = "Display amount healed in the info box tooltip",
+//		section = infoBoxSettings,
+//		position = 4
+//	)
+//	default boolean infoBoxTooltipHealed()
+//	{
+//		return true;
+//	}
 
 	@ConfigItem(
 		keyName = "infoBoxTooltipSplits",

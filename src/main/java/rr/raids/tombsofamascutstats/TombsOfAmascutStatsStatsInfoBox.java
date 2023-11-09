@@ -80,7 +80,7 @@ public class TombsOfAmascutStatsStatsInfoBox extends InfoBox
 		if (config.infoBoxTooltipSplits() && !StringUtils.isEmpty(splits))
 		{
 			sb.append(splits);
-			if (config.infoBoxTooltipDmg() || config.infoBoxTooltipHealed())
+			if (config.infoBoxTooltipDmg())
 			{
 				sb.append("</br>");
 			}
@@ -89,15 +89,11 @@ public class TombsOfAmascutStatsStatsInfoBox extends InfoBox
 		if (config.infoBoxTooltipDmg() && !StringUtils.isEmpty(damage) && !damage.equals("0"))
 		{
 			sb.append(damage).append(" (").append(percent).append("%)");
-			if (config.infoBoxTooltipHealed())
-			{
-				sb.append("</br>");
-			}
 		}
 
-		if (config.infoBoxTooltipHealed() && !StringUtils.isEmpty(healed))
+		if (!StringUtils.isEmpty(healed))
 		{
-			sb.append(healed);
+			sb.append("</br>").append(healed);
 		}
 
 		return sb.toString();
