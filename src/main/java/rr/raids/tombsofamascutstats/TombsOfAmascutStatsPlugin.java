@@ -121,7 +121,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final Pattern WARDENS_COMPLETE = Pattern.compile("Challenge complete: The Wardens\\.");
 
 	private static final Set<String> BOSS_NAMES = ImmutableSet.of(
-		"Ba-Ba", "Kephri", "Akkha", "Zebak", "Obelisk", "Core", "Tumeken's Warden", "Elidinis' Warden"
+		"Ba-Ba", "Kephri", "Akkha", "Akkha's Shadow", "Zebak", "Obelisk", "Core", "Tumeken's Warden", "Elidinis' Warden"
 	);
 
 	@Inject
@@ -261,7 +261,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				roomTicks = client.getTickCount() - babaStartTick;
 				roomTime = formatTime(roomTicks);
-				//TODO figure out how to determine split times
+
 //				splits = "66% - " + formatTime(baba66Time) +
 //						"</br>" +
 //						"33% - " + formatTime(baba33Time) + " (" + formatTime(baba33Time - baba66Time) + ")" +
@@ -309,7 +309,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					);
 				}
 			}
-			//TODO add splits string
+			//TODO add splits logic
 			babaInfoBox = createInfoBox(BABA_PET_ID, "Ba-Ba", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, "");
 			infoBoxManager.addInfoBox(babaInfoBox);
 			resetBaba();
@@ -323,7 +323,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			String roomTime = "";
 			String splits = "";
 			String damage = "";
-			//TODO per phase shield healing, save healing to map with key being phase which is updated in Split logic
 			String healing = "Total Shield Healed - " + DMG_FORMAT.format(kephriHealing);
 			messages.clear();
 
@@ -331,7 +330,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				roomTicks = client.getTickCount() - kephriStartTick;
 				roomTime = formatTime(roomTicks);
-				//TODO figure out how to determine split times, Kephri has 4 phases
+
 //				splits = "66% - " + formatTime(baba66Time) +
 //						"</br>" +
 //						"33% - " + formatTime(baba33Time) + " (" + formatTime(baba33Time - baba66Time) + ")" +
@@ -386,19 +385,28 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					);
 				}
 			}
-			//TODO add splits string
+			//TODO add splits logic
 			kephriInfoBox = createInfoBox(KEPHRI_PET_ID, "Kephri", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, healing);
 			infoBoxManager.addInfoBox(kephriInfoBox);
 			resetKephri();
 		}
 		else if (AKKHA_COMPLETE.matcher(strippedMessage).find())
 		{
-			double personal = personalDamage.getOrDefault("Akkha", 0);
-			double total = totalDamage.getOrDefault("Akkha", 0);
-			double percent = (personal / total) * 100;
+			double personalAkkhaDamage = personalDamage.getOrDefault("Akkha", 0);
+			double totalAkkhaDamage = totalDamage.getOrDefault("Akkha", 0);
+			double percentAkkhaDamage = (personalAkkhaDamage / totalAkkhaDamage) * 100;
+
+			double personalShadowDamage = personalDamage.getOrDefault("Akkha's Shadow", 0);
+			double totalShadowDamage = totalDamage.getOrDefault("Akkha's Shadow", 0);
+			double percentShadowDamage = (personalShadowDamage / totalShadowDamage) * 100;
+
+			double personalTotalDamage = personalAkkhaDamage + personalShadowDamage;
+			double totalDamage = totalAkkhaDamage + totalShadowDamage;
+			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
+
 			int roomTicks;
 			String roomTime = "";
-			String damage = "";
+			String damage = "Damage Dealt:</br>";
 			messages.clear();
 
 			if (akkhaStartTick > 0)
@@ -407,21 +415,52 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				roomTime = formatTime(roomTicks);
 			}
 
-			if (personal > 0)
+			if (personalAkkhaDamage > 0)
 			{
-				damage = "Boss Damage - " + DMG_FORMAT.format(personal);
+				damage += "Akkha - " + DMG_FORMAT.format(personalAkkhaDamage) + " (" +DECIMAL_FORMAT.format(percentAkkhaDamage) + "%)" + "</br>";
 				if (config.chatboxDmg())
 				{
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
 									.append("Damage dealt to Akkha - ")
-									.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+									.append(Color.RED, DMG_FORMAT.format(personalAkkhaDamage) + " (" + DECIMAL_FORMAT.format(percentAkkhaDamage) + "%)")
 									.build()
 					);
 				}
 			}
-			akkhaInfoBox = createInfoBox(AKKHA_PET_ID, "Akkha", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, "");
+
+			if (personalShadowDamage > 0)
+			{
+				damage += "Akkha's Shadows - " + DMG_FORMAT.format(personalShadowDamage) + " (" +DECIMAL_FORMAT.format(percentShadowDamage) + "%)" + "</br>";
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Damage dealt to Akkha's Shadows - ")
+									.append(Color.RED, DMG_FORMAT.format(personalShadowDamage) + " (" + DECIMAL_FORMAT.format(percentShadowDamage) + "%)")
+									.build()
+					);
+				}
+			}
+
+			if (personalTotalDamage > 0)
+			{
+				damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Total damage dealt - ")
+									.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)")
+									.build()
+					);
+				}
+			}
+
+			akkhaInfoBox = createInfoBox(AKKHA_PET_ID, "Akkha", roomTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomTime, "");
 			infoBoxManager.addInfoBox(akkhaInfoBox);
 			resetAkkha();
 		}
@@ -676,7 +715,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			int wardensEnrageTime;
 			String totalKillTime = "";
 			String splits = "Times:</br>";
-			String damage = "Damage Dealt:</br>";
+			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (wardensP3StartTick > 0)
@@ -684,7 +723,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				roomTicks = client.getTickCount() - wardensP3StartTick;
 				totalKillTime = formatTime(roomTicks);
 				wardensEnrageTime = roomTicks - wardensP3Time;
-				splits = "P3 to Enrage - " + formatTime(wardensP3Time) +
+				splits += "P3 to Enrage - " + formatTime(wardensP3Time) +
 						"</br>" +
 						"Enrage to kill - " + formatTime(wardensEnrageTime) +
 						"</br>" +
@@ -741,7 +780,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
-									.append("Enrage Damage Dealt - ")
+									.append("Enrage damage dealt - ")
 									.append(Color.RED, DMG_FORMAT.format(wardensP4PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP4Percent) + "%)")
 									.build()
 					);
@@ -780,71 +819,63 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 	}
 
-//	@Subscribe
-//	public void onNpcChanged(NpcChanged event)
-//	{
-//		if (!toaInside)
-//		{
-//			return;
-//		}
-//
-//		NPC npc = event.getNpc();
-//		int npcId = npc.getId();
-//		//TODO using form change to calc phase times, might work for Kephri/Baba?
-//		switch (npcId)
-//		{
-//
-//		}
-//	}
+	@Subscribe
+	public void onNpcChanged(NpcChanged event)
+	{
+		if (!toaInside)
+		{
+			return;
+		}
 
-//	@Subscribe
-//	public void onNpcSpawned(NpcSpawned event)
-//	{
-//		if (!toaInside)
-//		{
-//			return;
-//		}
-//
-//		NPC npc = event.getNpc();
-//		int npcId = npc.getId();
-//
-//		switch (npcId)
-//		{
-//			case NpcID.ELIDINIS_WARDEN_11753: //P2 Elidnis' Warden vulnerable to magic
-//				wardensP1Time = client.getTickCount() - wardensStartTick;
-//				wardensP1Personal = personalDamage.getOrDefault("Obelisk", 0);
-//				wardensP1Total = totalDamage.getOrDefault("Obelisk", 0);
-//				foughtElidinisWardenInP3 = false;
-//				break;
-//			case NpcID.TUMEKENS_WARDEN_11757: //P2 Tumeken's Warden vulnerable to range
-//				wardensP1Time = client.getTickCount() - wardensStartTick;
-//				wardensP1Personal = personalDamage.getOrDefault("Obelisk", 0);
-//				wardensP1Total = totalDamage.getOrDefault("Obelisk", 0);
-//				foughtElidinisWardenInP3 = true;
-//				break;
-//			case NpcID.ELIDINIS_WARDEN_11761: //P3 Elidnis' Warden
-//				wardensP2Time = client.getTickCount() - wardensStartTick;
-//				wardensP2Personal = personalDamage.getOrDefault("Tumeken's Warden", 0) - wardensP1Personal;
-//				wardensP2Total = totalDamage.getOrDefault("Tumeken's Warden", 0) - wardensP1Total;
-//				break;
-//			case NpcID.TUMEKENS_WARDEN_11762: //P3 Tumeken's Warden
-//				wardensP2Time = client.getTickCount() - wardensStartTick;
-//				wardensP2Personal = personalDamage.getOrDefault("Elidinis' Warden", 0) - wardensP1Personal;
-//				wardensP2Total = totalDamage.getOrDefault("Elidinis' Warden", 0) - wardensP1Total;
-//				break;
-//		}
-//
-//	}
+		NPC npc = event.getNpc();
+		int npcId = npc.getId();
+		//TODO using form change to calc phase times, might work for Kephri/Baba?
+		switch (npcId)
+		{
 
-//	@Subscribe
-//	public void onNpcDespawned(NpcDespawned event)
-//	{
-//		if (!toaInside)
-//		{
-//			return;
-//		}
-//
-//	}
+		}
+
+		log.info("NPC changed from {} with id {} to {} with id {}",
+				Text.removeTags(event.getOld().getName()),
+				event.getOld().getId(),
+				Text.removeTags(event.getNpc().getName()),
+				event.getNpc().getId());
+	}
+
+	@Subscribe
+	public void onNpcSpawned(NpcSpawned event)
+	{
+		if (!toaInside)
+		{
+			return;
+		}
+
+		NPC npc = event.getNpc();
+		int npcId = npc.getId();
+
+		switch (npcId)
+		{
+
+		}
+		log.info("NPC spawned {}/{} with id {}",
+				Text.removeTags(event.getActor().getName()),
+				Text.removeTags(event.getNpc().getName()),
+				event.getNpc().getId());
+	}
+
+	@Subscribe
+	public void onNpcDespawned(NpcDespawned event)
+	{
+		if (!toaInside)
+		{
+			return;
+		}
+		log.info("NPC despawned {}/{} with id {} and isDead = {}",
+				Text.removeTags(event.getActor().getName()),
+				Text.removeTags(event.getNpc().getName()),
+				event.getNpc().getId(),
+				event.getActor().isDead());
+	}
 
 //	@Subscribe
 //	public void onGameTick(GameTick event)
@@ -940,6 +971,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				if (wardensP4EnrageHeal) //the Wardens heal twice, once at the very start of Phase 3 and once when they enter enrage phase/phase 4
 				{
+					//on the second heal, record time and damage up to that point
 					wardensP3Time = client.getTickCount() - wardensP3StartTick;
 					wardensP3PersonalDamage = personalDamage.getOrDefault(npcName, 0);
 					wardensP3TotalDamage = totalDamage.getOrDefault(npcName, 0);
@@ -1010,6 +1042,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		akkhaStartTick = -1;
 		personalDamage.remove("Akkha");
 		totalDamage.remove("Akkha");
+		personalDamage.remove("Akkha's Shadow");
+		totalDamage.remove("Akkha's Shadow");
 	}
 
 	private void resetZebak()
@@ -1033,6 +1067,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		totalDamage.remove("Elidinis' Warden");
 		personalDamage.remove("Tumeken's Warden");
 		totalDamage.remove("Tumeken's Warden");
+		personalDamage.remove("Core");
+		totalDamage.remove("Core");
 	}
 
 	private void resetWardensP3()
