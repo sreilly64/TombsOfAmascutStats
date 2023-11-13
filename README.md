@@ -1,2 +1,2 @@
 # Tombs of Amascut Stats
-Detailed time splits and damage tracker for ToA
+This plugin provides detailed phase/kill times, damage tracking, and other stats for teams doing Tombs of Amascut.

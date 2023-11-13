@@ -154,13 +154,17 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private boolean toaInside;
 	private boolean instanced;
 	private boolean preciseTimers;
+	private boolean kephriFirstDown = true;
 	private boolean fightingElidinisWardenInP3;
 	private boolean wardensP4EnrageHeal = false;
+	private boolean allEnergySiphonsKilled = false;
 
 	private int babaStartTick = -1;
 	//TODO add baba split times
 	private int kephriStartTick = -1;
-	private int kephriHealing = 0;
+	private int kephriFirstDownHealing;
+	private int kephriSecondDownHealing;
+	private int kephriTotalHealing = 0;
 	//TODO add Kephri split times
 	private int akkhaStartTick = -1;
 	private int zebakStartTick = -1;
@@ -168,12 +172,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private int wardensP2StartTick = -1;
 	private int wardensP3StartTick = -1;
 	private int wardensP3Time;
-	private double wardensP3PersonalDamage;
-	private double wardensP3TotalDamage;
 	private int spawnedEnergySiphonCount;
 	private int killedEnergySiphonCount;
-	private boolean allEnergySiphonsKilled = false;
 	private int energySiphonBossDamage;
+
+	private double wardensP3PersonalDamage;
+	private double wardensP3TotalDamage;
 
 	private final Map<String, Integer> personalDamage = new HashMap<>();
 	private final Map<String, Integer> totalDamage = new HashMap<>();
@@ -259,7 +263,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			int roomTicks;
 			String roomTime = "";
 			String splits = "";
-			String damage = "";
+			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (babaStartTick > 0)
@@ -302,7 +306,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 			if (personal > 0)
 			{
-				damage = "Boss Damage - " + DMG_FORMAT.format(personal);
+				damage += "Ba-Ba - " + DMG_FORMAT.format(personal);
 				if (config.chatboxDmg())
 				{
 					messages.add(
@@ -337,7 +341,13 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			String roomTime = "";
 			String splits = "";
 			String damage = "</br>Damage Dealt:</br>";
-			String healing = "Total Shield Healed - " + DMG_FORMAT.format(kephriHealing);
+			String healing = "</br>Boss Healing:" +
+					"</br>" +
+					"First down healed - " + DMG_FORMAT.format(kephriFirstDownHealing) +
+					"</br>" +
+					"Second down healed - " + DMG_FORMAT.format(kephriSecondDownHealing) +
+					"</br>" +
+					"Total shield healed - " + DMG_FORMAT.format(kephriTotalHealing);
 			messages.clear();
 
 			if (kephriStartTick > 0)
@@ -386,8 +396,22 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
-									.append("Total Shield Healed - ")
-									.append(Color.RED, DMG_FORMAT.format(kephriHealing))
+									.append("First down shield healed - ")
+									.append(Color.RED, DMG_FORMAT.format(kephriFirstDownHealing))
+									.build()
+					);
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Second down shield healed - ")
+									.append(Color.RED, DMG_FORMAT.format(kephriSecondDownHealing))
+									.build()
+					);
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Total shield healed - ")
+									.append(Color.RED, DMG_FORMAT.format(kephriTotalHealing))
 									.build()
 					);
 					messages.add(
@@ -516,7 +540,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double percent = (personal / total) * 100;
 			int roomTicks;
 			String roomTime = "";
-			String damage = "";
+			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (zebakStartTick > 0)
@@ -527,7 +551,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 			if (personal > 0)
 			{
-				damage = "Boss Damage - " + DMG_FORMAT.format(personal);
+				damage = "Zebak - " + DMG_FORMAT.format(personal);
 				if (config.chatboxDmg())
 				{
 					messages.add(
@@ -550,7 +574,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double percent = (personal / total) * 100;
 			int roomTicks;
 			String roomTime = "";
-			String damage = "";
+			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (obeliskStartTick > 0)
@@ -561,7 +585,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 			if (personal > 0)
 			{
-				damage = "Boss Damage - " + DMG_FORMAT.format(personal);
+				damage = "Obelisk - " + DMG_FORMAT.format(personal);
 				if (config.chatboxDmg())
 				{
 					messages.add(
@@ -900,6 +924,17 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					spawnedEnergySiphonCount = 0;
 					killedEnergySiphonCount = 0;
 				}
+				break;
+			case NpcID.KEPHRI:
+				if (kephriFirstDown)
+				{
+					kephriFirstDownHealing = kephriTotalHealing;
+					kephriFirstDown = false;
+				}
+				else
+				{
+					kephriSecondDownHealing = kephriTotalHealing - kephriFirstDownHealing;
+				}
 		}
 
 		log.info("NPC changed from {} with id {} to {} with id {}",
@@ -1068,7 +1103,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (hitsplat.getHitsplatType() == KEPHRI_SHIELDED_HEALING_HITSPLAT_ID && npcName.equals("Kephri")) //Hitsplat ID is shared with Palm of Resourcefulness
 		{
-			kephriHealing += hitsplat.getAmount();
+			kephriTotalHealing += hitsplat.getAmount();
 		}
 	}
 
@@ -1125,7 +1160,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private void resetKephri()
 	{
 		kephriStartTick = -1;
-		kephriHealing = 0;
+		kephriFirstDownHealing = 0;
+		kephriSecondDownHealing = 0;
+		kephriTotalHealing = 0;
+		kephriFirstDown = true;
 		personalDamage.remove("Kephri");
 		totalDamage.remove("Kephri");
 		personalDamage.remove("Scarabs");
