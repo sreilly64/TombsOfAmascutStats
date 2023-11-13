@@ -826,6 +826,21 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
+			if (energySiphonBossDamage > 0) {
+				double percentEnergySiphonDamage = (energySiphonBossDamage / totalDamage) * 100;
+				damage += "Energy Siphon damage - " + DMG_FORMAT.format(energySiphonBossDamage) + " (" + DECIMAL_FORMAT.format(percentEnergySiphonDamage) + "%)" + "</br>";
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Energy Siphon damage - ")
+									.append(Color.RED, DMG_FORMAT.format(energySiphonBossDamage) + " (" + DECIMAL_FORMAT.format(percentEnergySiphonDamage) + "%)")
+									.build()
+					);
+				}
+			}
+
 			if (wardensP3PersonalDamage > 0)
 			{
 				damage += "P3 to Enrage - " + DMG_FORMAT.format(wardensP3PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP3Percent) + "%)" + "</br>";
@@ -851,21 +866,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 									.append(ChatColorType.NORMAL)
 									.append("Enrage damage dealt - ")
 									.append(Color.RED, DMG_FORMAT.format(wardensP4PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP4Percent) + "%)")
-									.build()
-					);
-				}
-			}
-
-			if (energySiphonBossDamage > 0) {
-				double percentEnergySiphonDamage = (energySiphonBossDamage / totalDamage) * 100;
-				damage += "Energy Siphon damage - " + DMG_FORMAT.format(energySiphonBossDamage) + " (" + DECIMAL_FORMAT.format(percentEnergySiphonDamage) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Energy Siphon damage - ")
-									.append(Color.RED, DMG_FORMAT.format(energySiphonBossDamage) + " (" + DECIMAL_FORMAT.format(percentEnergySiphonDamage) + "%)")
 									.build()
 					);
 				}
