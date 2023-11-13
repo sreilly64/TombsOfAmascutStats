@@ -75,6 +75,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final int OBELISK_ICON_ID = 21788;
 	private static final int ELIDNIS_WARDEN_PET_ID = 27354;
 	private static final int TUMEKENS_WARDEN_PET_ID = 27352;
+	private static final int KILLED_ENERGY_SIPHON_ID = 11773;
 	private static final int TOA_ATRIUM_REGION_ID = 14160;
 	private static final int BABA_PUZZLE_ROOM_REGION_ID = 15186;
 	private static final int BABA_ROOM_REGION_ID = 15188;
@@ -169,7 +170,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private int wardensP3Time;
 	private double wardensP3PersonalDamage;
 	private double wardensP3TotalDamage;
-
+	private int spawnedEnergySiphonCount;
+	private int killedEnergySiphonCount;
+	private boolean allEnergySiphonsKilled = false;
+	private int energySiphonBossDamage;
 
 	private final Map<String, Integer> personalDamage = new HashMap<>();
 	private final Map<String, Integer> totalDamage = new HashMap<>();
@@ -828,6 +832,21 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
+			if (energySiphonBossDamage > 0) {
+				double percentEnergySiphonDamage = (energySiphonBossDamage / totalDamage) * 100;
+				damage += "Energy Siphon damage - " + DMG_FORMAT.format(energySiphonBossDamage) + " (" + DECIMAL_FORMAT.format(percentEnergySiphonDamage) + "%)" + "</br>";
+				if (config.chatboxDmg())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Energy Siphon damage - ")
+									.append(Color.RED, DMG_FORMAT.format(energySiphonBossDamage) + " (" + DECIMAL_FORMAT.format(percentEnergySiphonDamage) + "%)")
+									.build()
+					);
+				}
+			}
+
 			if (personalTotalDamage > 0)
 			{
 				damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
@@ -870,10 +889,17 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		NPC npc = event.getNpc();
 		int npcId = npc.getId();
-		//TODO using form change to calc phase times, might work for Kephri/Baba?
+
 		switch (npcId)
 		{
-
+			case KILLED_ENERGY_SIPHON_ID:
+				killedEnergySiphonCount++;
+				if (killedEnergySiphonCount == spawnedEnergySiphonCount)
+				{
+					allEnergySiphonsKilled = true;
+					spawnedEnergySiphonCount = 0;
+					killedEnergySiphonCount = 0;
+				}
 		}
 
 		log.info("NPC changed from {} with id {} to {} with id {}",
@@ -896,7 +922,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
-
+			case NpcID.ENERGY_SIPHON:
+				spawnedEnergySiphonCount++;
 		}
 		log.info("NPC spawned {}/{} with id {}",
 				Text.removeTags(event.getActor().getName()),
@@ -911,6 +938,16 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			return;
 		}
+
+		NPC npc = event.getNpc();
+		int npcId = npc.getId();
+
+		switch (npcId)
+		{
+			case NpcID.ENERGY_SIPHON:
+				resetEnergySiphonStats();
+		}
+
 		log.info("NPC despawned {}/{} with id {} and isDead = {}",
 				Text.removeTags(event.getActor().getName()),
 				Text.removeTags(event.getNpc().getName()),
@@ -986,7 +1023,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		if (isWardensP2Hitsplat(hitsplat))
 		{
-			npcName = npcName + " Shielded";
+			npcName = npcName + " Shielded"; //save shield damage as separate dmg type due to damage Wardens receive from attacking the Core
 		}
 
 		if (hitsplat.isMine() || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_ME_HITSPLAT_ID || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID)
@@ -1003,6 +1040,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			int totalDmg = totalDamage.getOrDefault(npcName, 0);
 			totalDmg += hitsplat.getAmount();
 			totalDamage.put(npcName, totalDmg);
+
+			if (allEnergySiphonsKilled && (npcName.equals("Elidinis' Warden") || npcName.equals("Tumeken's Warden"))) //if damage comes from killing all the Energy Siphons
+			{
+				energySiphonBossDamage += hitsplat.getAmount();
+				resetEnergySiphonStats();
+			}
 		}
 		else if (hitsplat.getHitsplatType() == HitsplatID.HEAL)
 		{
@@ -1119,6 +1162,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		totalDamage.remove("Elidinis' Warden");
 		personalDamage.remove("Tumeken's Warden");
 		totalDamage.remove("Tumeken's Warden");
+		personalDamage.remove("Elidinis' Warden Shielded");
+		totalDamage.remove("Elidinis' Warden Shielded");
+		personalDamage.remove("Tumeken's Warden Shielded");
+		totalDamage.remove("Tumeken's Warden Shielded");
 		personalDamage.remove("Core");
 		totalDamage.remove("Core");
 	}
@@ -1130,9 +1177,17 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		wardensP3PersonalDamage = 0;
 		wardensP3TotalDamage = 0;
 		wardensP4EnrageHeal = false;
+		resetEnergySiphonStats();
+		energySiphonBossDamage = 0;
 		personalDamage.clear();
 		totalDamage.clear();
 		totalHealing.clear();
+	}
+
+	private void resetEnergySiphonStats() {
+		allEnergySiphonsKilled = false;
+		spawnedEnergySiphonCount = 0;
+		killedEnergySiphonCount = 0;
 	}
 
 	private void resetAll()
