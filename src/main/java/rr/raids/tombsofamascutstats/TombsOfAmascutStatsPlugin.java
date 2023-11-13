@@ -551,7 +551,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 			if (personal > 0)
 			{
-				damage = "Zebak - " + DMG_FORMAT.format(personal);
+				damage += "Zebak - " + DMG_FORMAT.format(personal);
 				if (config.chatboxDmg())
 				{
 					messages.add(
@@ -585,7 +585,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 			if (personal > 0)
 			{
-				damage = "Obelisk - " + DMG_FORMAT.format(personal);
+				damage += "Obelisk - " + DMG_FORMAT.format(personal);
 				if (config.chatboxDmg())
 				{
 					messages.add(
@@ -916,15 +916,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
-			case KILLED_ENERGY_SIPHON_ID:
-				killedEnergySiphonCount++;
-				if (killedEnergySiphonCount == spawnedEnergySiphonCount)
-				{
-					allEnergySiphonsKilled = true;
-					spawnedEnergySiphonCount = 0;
-					killedEnergySiphonCount = 0;
-				}
-				break;
 			case NpcID.KEPHRI:
 				if (kephriFirstDown)
 				{
@@ -935,6 +926,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				{
 					kephriSecondDownHealing = kephriTotalHealing - kephriFirstDownHealing;
 				}
+				break;
 		}
 
 		log.info("NPC changed from {} with id {} to {} with id {}",
@@ -980,7 +972,15 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		switch (npcId)
 		{
 			case NpcID.ENERGY_SIPHON:
-				resetEnergySiphonStats();
+			case KILLED_ENERGY_SIPHON_ID:
+				if (npc.isDead())
+				{
+					killedEnergySiphonCount++;
+					if (killedEnergySiphonCount == spawnedEnergySiphonCount)
+					{
+						allEnergySiphonsKilled = true;
+					}
+				}
 		}
 
 		log.info("NPC despawned {}/{} with id {} and isDead = {}",
