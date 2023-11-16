@@ -927,6 +927,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					kephriSecondDownHealing = kephriTotalHealing - kephriFirstDownHealing;
 				}
 				break;
+			case NpcID.TUMEKENS_WARDEN_11762:
+			case NpcID.ELIDINIS_WARDEN_11761:
+				spawnedEnergySiphonCount = 0;
+				killedEnergySiphonCount = 0;
 		}
 
 		log.info("NPC changed from {} with id {} to {} with id {}",
@@ -951,6 +955,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			case NpcID.ENERGY_SIPHON:
 				spawnedEnergySiphonCount++;
+				log.info("spawnedEnergySiphonCount incremented to {}", spawnedEnergySiphonCount);
 		}
 		log.info("NPC spawned {}/{} with id {}",
 				Text.removeTags(event.getActor().getName()),
@@ -976,11 +981,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				if (npc.isDead())
 				{
 					killedEnergySiphonCount++;
+					log.info("killedEnergySiphonCount incremented to = {}", killedEnergySiphonCount);
 					if (killedEnergySiphonCount == spawnedEnergySiphonCount)
 					{
 						allEnergySiphonsKilled = true;
+						log.info("All Energy Siphons were killed");
 					}
 				}
+				break;
 		}
 
 		log.info("NPC despawned {}/{} with id {} and isDead = {}",
@@ -1078,6 +1086,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 			if (allEnergySiphonsKilled && (npcName.equals("Elidinis' Warden") || npcName.equals("Tumeken's Warden"))) //if damage comes from killing all the Energy Siphons
 			{
+				log.info("Hitsplat {} attributed to Energy Siphons", hitsplat.getAmount());
 				energySiphonBossDamage += hitsplat.getAmount();
 				resetEnergySiphonStats();
 			}
