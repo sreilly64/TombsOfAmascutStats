@@ -125,7 +125,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		"Ba-Ba", "Kephri", "Spitting Scarab", "Arcane Scarab", "Soldier Scarab", "Akkha", "Akkha's Shadow", "Zebak", "Obelisk", "Core", "Tumeken's Warden", "Elidinis' Warden", "Energy Siphon"
 	);
 
-	private static final Set<Integer> TOA_PARTY_MEMBER_VARBITS = ImmutableSet.of(
+	private static final Set<Integer> TOA_PARTY_MEMBER_VARBIT_IDS = ImmutableSet.of(
 			Varbits.TOA_MEMBER_0_HEALTH,
 			Varbits.TOA_MEMBER_1_HEALTH,
 			Varbits.TOA_MEMBER_2_HEALTH,
@@ -984,9 +984,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 	private int getLivingPlayerCount() {
 		int livingPlayerCount = 0;
-		for (Integer toaMemberVarbitValue : TOA_PARTY_MEMBER_VARBITS)
+		for (Integer toaMemberVarbitId : TOA_PARTY_MEMBER_VARBIT_IDS)
 		{
-			if (toaMemberVarbitValue != 0 && toaMemberVarbitValue != 30) //0 = no party member in that slot, 30 = dead
+			int varbitValue = client.getVarbitValue(toaMemberVarbitId);
+			if (varbitValue != 0 && varbitValue != 30) //0 = no party member in that slot, 30 = dead
 			{
 				livingPlayerCount++;
 			}
