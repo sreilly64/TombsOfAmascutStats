@@ -122,8 +122,19 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final Pattern WARDENS_COMPLETE = Pattern.compile("Challenge complete: The Wardens\\.");
 
 	private static final Set<String> ENEMY_NAMES = ImmutableSet.of(
-		"Ba-Ba", "Kephri", "Spitting Scarab", "Arcane Scarab", "Soldier Scarab", "Akkha", "Akkha's Shadow", "Zebak", "Obelisk", "Core", "Tumeken's Warden", "Elidinis' Warden"
+		"Ba-Ba", "Kephri", "Spitting Scarab", "Arcane Scarab", "Soldier Scarab", "Akkha", "Akkha's Shadow", "Zebak", "Obelisk", "Core", "Tumeken's Warden", "Elidinis' Warden", "Energy Siphon"
 	);
+
+	private static final Set<Integer> TOA_PARTY_MEMBER_VARBITS = ImmutableSet.of(
+			Varbits.TOA_MEMBER_0_HEALTH,
+			Varbits.TOA_MEMBER_1_HEALTH,
+			Varbits.TOA_MEMBER_2_HEALTH,
+			Varbits.TOA_MEMBER_3_HEALTH,
+			Varbits.TOA_MEMBER_4_HEALTH,
+			Varbits.TOA_MEMBER_5_HEALTH,
+			Varbits.TOA_MEMBER_6_HEALTH,
+			Varbits.TOA_MEMBER_7_HEALTH
+			);
 
 	@Inject
 	private Client client;
@@ -172,8 +183,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private int wardensP2StartTick = -1;
 	private int wardensP3StartTick = -1;
 	private int wardensP3Time;
-	private int spawnedEnergySiphonCount;
-	private int killedEnergySiphonCount;
+	private int energySiphonTotalHealth;
 	private int energySiphonBossDamage;
 
 	private double wardensP3PersonalDamage;
@@ -929,8 +939,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				break;
 			case NpcID.TUMEKENS_WARDEN_11762:
 			case NpcID.ELIDINIS_WARDEN_11761:
-				spawnedEnergySiphonCount = 0;
-				killedEnergySiphonCount = 0;
+				//when Energy Siphon phase ends
+				energySiphonTotalHealth = 0;
 		}
 
 		log.info("NPC changed from {} with id {} to {} with id {}",
@@ -951,16 +961,38 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		NPC npc = event.getNpc();
 		int npcId = npc.getId();
 
-		switch (npcId)
-		{
-			case NpcID.ENERGY_SIPHON:
-				spawnedEnergySiphonCount++;
-				log.info("spawnedEnergySiphonCount incremented to {}", spawnedEnergySiphonCount);
-		}
 		log.info("NPC spawned {}/{} with id {}",
 				Text.removeTags(event.getActor().getName()),
 				Text.removeTags(event.getNpc().getName()),
 				event.getNpc().getId());
+
+		log.info("NPC {} spawned with health ratio {} and health scale {}", npc.getName(), npc.getHealthRatio(), npc.getHealthScale());
+
+		switch (npcId)
+		{
+			case NpcID.ENERGY_SIPHON:
+				int numberOfLivingPlayers = getLivingPlayerCount();
+				energySiphonTotalHealth += calculateEnergySiphonHealth(numberOfLivingPlayers);
+		}
+	}
+
+	private int calculateEnergySiphonHealth(int numberOfLivingPlayers) {
+		int health = numberOfLivingPlayers / 2; //rounds down
+		log.info("Energy Siphon health = {}", health);
+		return Math.max(health, 1); //rounds down to 0 if only 1 player, so in that case return 1
+	}
+
+	private int getLivingPlayerCount() {
+		int livingPlayerCount = 0;
+		for (Integer toaMemberVarbitValue : TOA_PARTY_MEMBER_VARBITS)
+		{
+			if (toaMemberVarbitValue != 0 && toaMemberVarbitValue != 30) //0 = no party member in that slot, 30 = dead
+			{
+				livingPlayerCount++;
+			}
+		}
+		log.info("Living player count = {}", livingPlayerCount);
+		return livingPlayerCount;
 	}
 
 	@Subscribe
@@ -976,19 +1008,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
-			case NpcID.ENERGY_SIPHON:
-			case KILLED_ENERGY_SIPHON_ID:
-				if (npc.isDead())
-				{
-					killedEnergySiphonCount++;
-					log.info("killedEnergySiphonCount incremented to = {}", killedEnergySiphonCount);
-					if (killedEnergySiphonCount == spawnedEnergySiphonCount)
-					{
-						allEnergySiphonsKilled = true;
-						log.info("All Energy Siphons were killed");
-					}
-				}
-				break;
+
 		}
 
 		log.info("NPC despawned {}/{} with id {} and isDead = {}",
@@ -1066,7 +1086,19 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		if (isWardensP2Hitsplat(hitsplat))
 		{
-			npcName = npcName + " Shielded"; //save shield damage as separate dmg type due to damage Wardens receive from attacking the Core
+			npcName = npcName + " Shielded"; //save shield damage as separate enemy name due to damage Wardens receive from attacking the Core being saved already under Wardens' names
+		}
+
+		log.info("NPC {} was hit for {}, now with health ratio {} and health scale {}", npc.getName(), hitsplat.getAmount(), npc.getHealthRatio(), npc.getHealthScale());
+
+		if (npcName.equalsIgnoreCase("Energy Siphon"))
+		{
+			energySiphonTotalHealth -= hitsplat.getAmount();
+			if (energySiphonTotalHealth == 0)
+			{
+				allEnergySiphonsKilled = true;
+			}
+			return;
 		}
 
 		if (hitsplat.isMine() || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_ME_HITSPLAT_ID || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID)
@@ -1233,8 +1265,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 	private void resetEnergySiphonStats() {
 		allEnergySiphonsKilled = false;
-		spawnedEnergySiphonCount = 0;
-		killedEnergySiphonCount = 0;
+		energySiphonTotalHealth = 0;
 	}
 
 	private void resetAll()
