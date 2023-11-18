@@ -122,7 +122,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final Pattern WARDENS_COMPLETE = Pattern.compile("Challenge complete: The Wardens\\.");
 
 	private static final Set<String> ENEMY_NAMES = ImmutableSet.of(
-		"Ba-Ba", "Kephri", "Spitting Scarab", "Arcane Scarab", "Soldier Scarab", "Akkha", "Akkha's Shadow", "Zebak", "Obelisk", "Core", "Tumeken's Warden", "Elidinis' Warden", "Energy Siphon"
+			"Ba-Ba",
+			"Kephri", "Spitting Scarab", "Arcane Scarab", "Soldier Scarab",
+			"Akkha", "Akkha's Shadow",
+			"Zebak",
+			"Obelisk", "Tumeken's Warden", "Elidinis' Warden", "Core", "Energy Siphon"
 	);
 
 	private static final Set<Integer> TOA_PARTY_MEMBER_VARBIT_IDS = ImmutableSet.of(
@@ -165,27 +169,33 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private boolean toaInside;
 	private boolean instanced;
 	private boolean preciseTimers;
-	private boolean kephriFirstDown = true;
-	private boolean fightingElidinisWardenInP3;
-	private boolean wardensP4EnrageHeal = false;
-	private boolean allEnergySiphonsKilled = false;
 
 	private int babaStartTick = -1;
-	//TODO add baba split times
+	private int babaPhase1CompletionTime;
+	private int babaBoulder1CompletionTime;
+	private int babaPhase2CompletionTime;
+	private int babaBoulder2CompletionTime;
+
 	private int kephriStartTick = -1;
+	private boolean kephriFirstDown = true;
 	private int kephriFirstDownHealing;
 	private int kephriSecondDownHealing;
 	private int kephriTotalHealing = 0;
 	//TODO add Kephri split times
+
 	private int akkhaStartTick = -1;
+
 	private int zebakStartTick = -1;
+
 	private int obeliskStartTick = -1;
 	private int wardensP2StartTick = -1;
 	private int wardensP3StartTick = -1;
-	private int wardensP3Time;
+	private boolean fightingElidinisWardenInP3;
+	private boolean wardensP4EnrageHeal = false;
+	private boolean allEnergySiphonsKilled = false;
+	private int wardensP3CompletionTime;
 	private int energySiphonTotalHealth;
 	private int energySiphonBossDamage;
-
 	private double wardensP3PersonalDamage;
 	private double wardensP3TotalDamage;
 
@@ -271,47 +281,78 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double total = totalDamage.getOrDefault("Ba-Ba", 0);
 			double percent = (personal / total) * 100;
 			int roomTicks;
-			String roomTime = "";
-			String splits = "";
+			int babaPhase3CompletionTime;
+			String roomCompletionTime = "";
+			String splits = "Times:</br>";
 			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (babaStartTick > 0)
 			{
 				roomTicks = client.getTickCount() - babaStartTick;
-				roomTime = formatTime(roomTicks);
+				roomCompletionTime = formatTime(roomTicks);
+				babaPhase3CompletionTime = roomTicks - babaPhase1CompletionTime - babaBoulder1CompletionTime - babaPhase2CompletionTime - babaBoulder2CompletionTime;
+				splits = "Phase 1 - " + formatTime(babaPhase1CompletionTime) +
+						"</br>" +
+						"Boulders 1 - " + formatTime(babaBoulder1CompletionTime) +
+						"</br>" +
+						"Phase 2 - " + formatTime(babaPhase2CompletionTime) +
+						"</br>" +
+						"Boulders 2 - " + formatTime(babaBoulder2CompletionTime) +
+						"</br>" +
+						"Phase 3 - " + formatTime(babaPhase3CompletionTime) +
+						"</br>" +
+						"Total - " + formatTime(roomTicks);
+				if (config.chatboxSplits())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Phase 1 - ")
+									.append(Color.RED, formatTime(babaPhase1CompletionTime))
+									.build()
+					);
 
-//				splits = "66% - " + formatTime(baba66Time) +
-//						"</br>" +
-//						"33% - " + formatTime(baba33Time) + " (" + formatTime(baba33Time - baba66Time) + ")" +
-//						"</br>" +
-//						"Room Complete - " + roomTime + " (" + formatTime(roomTicks - baba33Time) + ")";
-//				if (config.chatboxSplits())
-//				{
-//					messages.add(
-//							new ChatMessageBuilder()
-//									.append(ChatColorType.NORMAL)
-//									.append("66% - ")
-//									.append(Color.RED, formatTime(baba66Time))
-//									.build()
-//					);
-//
-//					messages.add(
-//							new ChatMessageBuilder()
-//									.append(ChatColorType.NORMAL)
-//									.append("33% - ")
-//									.append(Color.RED, formatTime(baba33Time) + " (" + formatTime(baba33Time - baba66Time) + ")")
-//									.build()
-//					);
-//
-//					messages.add(
-//							new ChatMessageBuilder()
-//									.append(ChatColorType.NORMAL)
-//									.append("Room Complete - ")
-//									.append(Color.RED, roomTime + " (" + formatTime(roomTicks - baba33Time) + ")")
-//									.build()
-//					);
-//				}
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Boulders 1 - ")
+									.append(Color.RED, formatTime(babaBoulder1CompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Phase 2 - ")
+									.append(Color.RED, formatTime(babaPhase2CompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Boulders 2 - ")
+									.append(Color.RED, formatTime(babaBoulder2CompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Phase 3 - ")
+									.append(Color.RED, formatTime(babaPhase3CompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Total time - ")
+									.append(Color.RED, roomCompletionTime)
+									.build()
+					);
+				}
 			}
 
 			if (personal > 0)
@@ -328,8 +369,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					);
 				}
 			}
-			//TODO add splits logic
-			babaInfoBox = createInfoBox(BABA_PET_ID, "Ba-Ba", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, "");
+			babaInfoBox = createInfoBox(BABA_PET_ID, "Ba-Ba", roomCompletionTime, DECIMAL_FORMAT.format(percent), damage, splits, "");
 			infoBoxManager.addInfoBox(babaInfoBox);
 			resetBaba();
 		}
@@ -348,7 +388,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
 
 			int roomTicks;
-			String roomTime = "";
+			String roomCompletionTime = "";
 			String splits = "";
 			String damage = "</br>Damage Dealt:</br>";
 			String healing = "</br>Boss Healing:" +
@@ -363,7 +403,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			if (kephriStartTick > 0)
 			{
 				roomTicks = client.getTickCount() - kephriStartTick;
-				roomTime = formatTime(roomTicks);
+				roomCompletionTime = formatTime(roomTicks);
 
 //				splits = "66% - " + formatTime(baba66Time) +
 //						"</br>" +
@@ -465,7 +505,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			}
 
 			//TODO add splits logic
-			kephriInfoBox = createInfoBox(KEPHRI_PET_ID, "Kephri", roomTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomTime, healing);
+			kephriInfoBox = createInfoBox(KEPHRI_PET_ID, "Kephri", roomCompletionTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomCompletionTime, healing);
 			infoBoxManager.addInfoBox(kephriInfoBox);
 			resetKephri();
 		}
@@ -484,14 +524,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
 
 			int roomTicks;
-			String roomTime = "";
+			String roomCompletionTime = "";
 			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (akkhaStartTick > 0)
 			{
 				roomTicks = client.getTickCount() - akkhaStartTick;
-				roomTime = formatTime(roomTicks);
+				roomCompletionTime = formatTime(roomTicks);
 			}
 
 			if (personalAkkhaDamage > 0)
@@ -539,7 +579,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
-			akkhaInfoBox = createInfoBox(AKKHA_PET_ID, "Akkha", roomTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomTime, "");
+			akkhaInfoBox = createInfoBox(AKKHA_PET_ID, "Akkha", roomCompletionTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomCompletionTime, "");
 			infoBoxManager.addInfoBox(akkhaInfoBox);
 			resetAkkha();
 		}
@@ -549,14 +589,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double total = totalDamage.getOrDefault("Zebak", 0);
 			double percent = (personal / total) * 100;
 			int roomTicks;
-			String roomTime = "";
+			String roomCompletionTime = "";
 			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (zebakStartTick > 0)
 			{
 				roomTicks = client.getTickCount() - zebakStartTick;
-				roomTime = formatTime(roomTicks);
+				roomCompletionTime = formatTime(roomTicks);
 			}
 
 			if (personal > 0)
@@ -573,7 +613,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					);
 				}
 			}
-			zebakInfoBox = createInfoBox(ZEBAK_PET_ID, "Zebak", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, "");
+			zebakInfoBox = createInfoBox(ZEBAK_PET_ID, "Zebak", roomCompletionTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomCompletionTime, "");
 			infoBoxManager.addInfoBox(zebakInfoBox);
 			resetZebak();
 		}
@@ -583,14 +623,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double total = totalDamage.getOrDefault("Obelisk", 0);
 			double percent = (personal / total) * 100;
 			int roomTicks;
-			String roomTime = "";
+			String roomCompletionTime = "";
 			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (obeliskStartTick > 0)
 			{
 				roomTicks = client.getTickCount() - obeliskStartTick;
-				roomTime = formatTime(roomTicks);
+				roomCompletionTime = formatTime(roomTicks);
 			}
 
 			if (personal > 0)
@@ -607,7 +647,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					);
 				}
 			}
-			obeliskInfoBox = createInfoBox(OBELISK_ICON_ID, "Obelisk", roomTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomTime, "");
+			obeliskInfoBox = createInfoBox(OBELISK_ICON_ID, "Obelisk", roomCompletionTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomCompletionTime, "");
 			infoBoxManager.addInfoBox(obeliskInfoBox);
 			resetObelisk();
 			wardensP2StartTick = client.getTickCount();
@@ -627,14 +667,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
 
 			int roomTicks;
-			String roomTime = "";
+			String roomCompletionTime = "";
 			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (wardensP2StartTick > 0)
 			{
 				roomTicks = client.getTickCount() - wardensP2StartTick;
-				roomTime = formatTime(roomTicks);
+				roomCompletionTime = formatTime(roomTicks);
 			}
 
 			if (personalShieldDamage > 0)
@@ -682,7 +722,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
-			wardensP2InfoBox = createInfoBox(TUMEKENS_WARDEN_PET_ID, "P2 Tumeken's Warden", roomTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomTime, "");
+			wardensP2InfoBox = createInfoBox(TUMEKENS_WARDEN_PET_ID, "P2 Tumeken's Warden", roomCompletionTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomCompletionTime, "");
 			infoBoxManager.addInfoBox(wardensP2InfoBox);
 			resetWardensP2();
 			wardensP3StartTick = client.getTickCount();
@@ -703,14 +743,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
 
 			int roomTicks;
-			String roomTime = "";
+			String roomCompletionTime = "";
 			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
 			if (wardensP2StartTick > 0)
 			{
 				roomTicks = client.getTickCount() - wardensP2StartTick;
-				roomTime = formatTime(roomTicks);
+				roomCompletionTime = formatTime(roomTicks);
 			}
 
 			if (personalShieldDamage > 0)
@@ -757,7 +797,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					);
 				}
 			}
-			wardensP2InfoBox = createInfoBox(ELIDNIS_WARDEN_PET_ID, "P2 Elidinis' Warden", roomTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomTime, "");
+			wardensP2InfoBox = createInfoBox(ELIDNIS_WARDEN_PET_ID, "P2 Elidinis' Warden", roomCompletionTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomCompletionTime, "");
 			infoBoxManager.addInfoBox(wardensP2InfoBox);
 			resetWardensP2();
 			wardensP3StartTick = client.getTickCount();
@@ -791,8 +831,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double wardensP4Percent = (wardensP4PersonalDamage / wardensP4TotalDamage) * 100;
 			double totalPercent = (personalTotalDamage / totalDamage) * 100;
 			int roomTicks;
-			int wardensEnrageTime;
-			String totalKillTime = "";
+			int wardensEnrageCompletionTime;
+			String roomCompletionTime = "";
 			String splits = "Times:</br>";
 			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
@@ -800,13 +840,13 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			if (wardensP3StartTick > 0)
 			{
 				roomTicks = client.getTickCount() - wardensP3StartTick;
-				totalKillTime = formatTime(roomTicks);
-				wardensEnrageTime = roomTicks - wardensP3Time;
-				splits += "P3 to Enrage - " + formatTime(wardensP3Time) +
+				roomCompletionTime = formatTime(roomTicks);
+				wardensEnrageCompletionTime = roomTicks - wardensP3CompletionTime;
+				splits += "P3 to Enrage - " + formatTime(wardensP3CompletionTime) +
 						"</br>" +
-						"Enrage to kill - " + formatTime(wardensEnrageTime) +
+						"Enrage to kill - " + formatTime(wardensEnrageCompletionTime) +
 						"</br>" +
-						"Total - " + totalKillTime;
+						"Total - " + roomCompletionTime;
 
 				if (config.chatboxSplits())
 				{
@@ -814,7 +854,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
 									.append("P3 to Enrage - ")
-									.append(Color.RED, formatTime(wardensP3Time))
+									.append(Color.RED, formatTime(wardensP3CompletionTime))
 									.build()
 					);
 
@@ -822,7 +862,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
 									.append("Enrage to kill - ")
-									.append(Color.RED, formatTime(wardensEnrageTime))
+									.append(Color.RED, formatTime(wardensEnrageCompletionTime))
 									.build()
 					);
 
@@ -830,7 +870,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
 									.append("Total time - ")
-									.append(Color.RED, totalKillTime)
+									.append(Color.RED, roomCompletionTime)
 									.build()
 					);
 				}
@@ -895,7 +935,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					);
 				}
 			}
-			wardensP3InfoBox = createInfoBox(infoBoxIconId, bossName, totalKillTime, DECIMAL_FORMAT.format(totalPercent), damage, splits, "");
+			wardensP3InfoBox = createInfoBox(infoBoxIconId, bossName, roomCompletionTime, DECIMAL_FORMAT.format(totalPercent), damage, splits, "");
 			infoBoxManager.addInfoBox(wardensP3InfoBox);
 			resetWardensP3();
 		}
@@ -926,7 +966,23 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
-			case NpcID.KEPHRI:
+			case NpcID.BABA_11780: //Ba-Ba leaps to the top of the room and starts throwing boulders
+				if (babaPhase1CompletionTime == 0)
+				{
+					babaPhase1CompletionTime = client.getTickCount() - babaStartTick;
+				}
+				else
+				{
+					babaPhase2CompletionTime = client.getTickCount() - babaStartTick - babaPhase1CompletionTime - babaBoulder1CompletionTime;
+				}
+				break;
+			case NpcID.BABA: //end of first boulder phase
+				babaBoulder1CompletionTime = client.getTickCount() - babaStartTick - babaPhase1CompletionTime;
+				break;
+			case NpcID.BABA_11779: //end of second boulder phase
+				babaBoulder2CompletionTime = client.getTickCount() - babaStartTick - babaPhase1CompletionTime - babaBoulder1CompletionTime - babaPhase2CompletionTime;
+				break;
+			case NpcID.KEPHRI: //Kephri starts attacking again after losing and then regaining her shield
 				if (kephriFirstDown)
 				{
 					kephriFirstDownHealing = kephriTotalHealing;
@@ -938,9 +994,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 				break;
 			case NpcID.TUMEKENS_WARDEN_11762:
-			case NpcID.ELIDINIS_WARDEN_11761:
-				//when Energy Siphon phase ends
+			case NpcID.ELIDINIS_WARDEN_11761: //when Energy Siphon phase ends and Warden becomes vulnerable again
 				energySiphonTotalHealth = 0;
+				break;
 		}
 
 		log.info("NPC changed from {} with id {} to {} with id {}",
@@ -961,12 +1017,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		NPC npc = event.getNpc();
 		int npcId = npc.getId();
 
-		log.info("NPC spawned {}/{} with id {}",
-				Text.removeTags(event.getActor().getName()),
+		log.info("NPC spawned {} with id {}, health ratio {} and health scale {}",
 				Text.removeTags(event.getNpc().getName()),
-				event.getNpc().getId());
-
-		log.info("NPC {} spawned with health ratio {} and health scale {}", npc.getName(), npc.getHealthRatio(), npc.getHealthScale());
+				npcId,
+				npc.getHealthRatio(),
+				npc.getHealthScale());
 
 		switch (npcId)
 		{
@@ -1090,7 +1145,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			npcName = npcName + " Shielded"; //save shield damage as separate enemy name due to damage Wardens receive from attacking the Core being saved already under Wardens' names
 		}
 
-		log.info("NPC {} was hit for {}, now with health ratio {} and health scale {}", npc.getName(), hitsplat.getAmount(), npc.getHealthRatio(), npc.getHealthScale());
+//		log.info("NPC {} was hit for {}, now with health ratio {} and health scale {}", npc.getName(), hitsplat.getAmount(), npc.getHealthRatio(), npc.getHealthScale());
 
 		if (npcName.equalsIgnoreCase("Energy Siphon"))
 		{
@@ -1135,7 +1190,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				if (wardensP4EnrageHeal) //the Wardens heal twice, once at the very start of Phase 3 and once when they enter enrage phase/phase 4
 				{
 					//on the second heal, record time and damage up to that point
-					wardensP3Time = client.getTickCount() - wardensP3StartTick;
+					wardensP3CompletionTime = client.getTickCount() - wardensP3StartTick;
 					wardensP3PersonalDamage = personalDamage.getOrDefault(npcName, 0);
 					wardensP3TotalDamage = totalDamage.getOrDefault(npcName, 0);
 					wardensP4EnrageHeal = false;
@@ -1195,6 +1250,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private void resetBaba()
 	{
 		babaStartTick = -1;
+		babaPhase1CompletionTime = 0;
+		babaBoulder1CompletionTime = 0;
+		babaPhase2CompletionTime = 0;
+		babaBoulder2CompletionTime = 0;
 		personalDamage.remove("Ba-Ba");
 		totalDamage.remove("Ba-Ba");
 	}
@@ -1253,7 +1312,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private void resetWardensP3()
 	{
 		wardensP3StartTick = -1;
-		wardensP3Time = 0;
+		wardensP3CompletionTime = 0;
 		wardensP3PersonalDamage = 0;
 		wardensP3TotalDamage = 0;
 		wardensP4EnrageHeal = false;
