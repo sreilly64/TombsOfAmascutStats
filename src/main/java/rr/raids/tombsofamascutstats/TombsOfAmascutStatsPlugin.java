@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, HSJ
+ * Copyright (c) 2023, Red Rookie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @PluginDescriptor(
 	name = "Tombs of Amascut Stats",
-	description = "Tombs of Amascut room splits and damage",
+	description = "Tombs of Amascut phase times and damage tracker",
 	tags = {"combat", "raid", "pve", "pvm", "bosses", "toa"},
 	enabledByDefault = false
 )
@@ -76,7 +76,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final int ELIDNIS_WARDEN_PET_ID = 27354;
 	private static final int TUMEKENS_WARDEN_PET_ID = 27352;
 	private static final int KILLED_ENERGY_SIPHON_ID = 11773;
-	private static final int TOA_ATRIUM_REGION_ID = 14160;
+	private static final int TOA_NEXUS_REGION_ID = 14160;
 	private static final int BABA_PUZZLE_ROOM_REGION_ID = 15186;
 	private static final int BABA_ROOM_REGION_ID = 15188;
 	private static final int KEPHRI_PUZZLE_ROOM_REGION_ID = 14162;
@@ -91,7 +91,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final int TOA_LOBBY_REGION_ID = 13454;
 
 	private static final Set<Integer> TOA_ROOM_IDS = ImmutableSet.of(
-			TOA_ATRIUM_REGION_ID,
+			TOA_NEXUS_REGION_ID,
 			BABA_PUZZLE_ROOM_REGION_ID,
 			BABA_ROOM_REGION_ID,
 			KEPHRI_PUZZLE_ROOM_REGION_ID,
@@ -138,7 +138,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			Varbits.TOA_MEMBER_5_HEALTH,
 			Varbits.TOA_MEMBER_6_HEALTH,
 			Varbits.TOA_MEMBER_7_HEALTH
-			);
+	);
 
 	@Inject
 	private Client client;
@@ -410,7 +410,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				roomTicks = client.getTickCount() - kephriStartTick;
 				roomCompletionTime = formatTime(roomTicks);
-				kephriPhase4CompletionTime = roomTicks - kephriPhase4StartTick;
+				kephriPhase4CompletionTime = client.getTickCount() - kephriPhase4StartTick;
 
 				splits += "Shield 1 - " + formatTime(kephriPhase1CompletionTime) +
 						"</br>" +
@@ -1038,6 +1038,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			case NpcID.TUMEKENS_WARDEN_11762:
 			case NpcID.ELIDINIS_WARDEN_11761: //when Energy Siphon phase ends and Warden becomes vulnerable again
 				energySiphonTotalHealth = 0;
+				log.info("energySiphonTotalHealth reset to zero.");
 				break;
 		}
 
@@ -1070,12 +1071,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			case NpcID.ENERGY_SIPHON:
 				int numberOfLivingPlayers = getLivingPlayerCount();
 				energySiphonTotalHealth += calculateEnergySiphonHealth(numberOfLivingPlayers);
+				log.info("energySiphonTotalHealth increased by {} to {}", calculateEnergySiphonHealth(numberOfLivingPlayers), energySiphonTotalHealth);
 		}
 	}
 
 	private int calculateEnergySiphonHealth(int numberOfLivingPlayers) {
 		int health = numberOfLivingPlayers / 2; //rounds down
-		log.info("Energy Siphon health = {}", health);
 		return Math.max(health, 1); //rounds down to 0 if only 1 player, so in that case return 1
 	}
 
@@ -1189,12 +1190,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 //		log.info("NPC {} was hit for {}, now with health ratio {} and health scale {}", npc.getName(), hitsplat.getAmount(), npc.getHealthRatio(), npc.getHealthScale());
 
-		if (npcName.equalsIgnoreCase("Energy Siphon"))
+		if (npc.getId() == NpcID.ENERGY_SIPHON || npc.getId() == KILLED_ENERGY_SIPHON_ID)
 		{
+			log.info("Energy Siphon hitsplat with id = {} and amount = {}", npc.getId(), hitsplat.getAmount());
 			energySiphonTotalHealth -= hitsplat.getAmount();
 			if (energySiphonTotalHealth == 0)
 			{
 				allEnergySiphonsKilled = true;
+				log.info("allEnergySiphonsKilled set to true.");
 			}
 			return;
 		}
@@ -1218,7 +1221,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				log.info("Hitsplat {} attributed to Energy Siphons", hitsplat.getAmount());
 				energySiphonBossDamage += hitsplat.getAmount();
-				resetEnergySiphonStats();
+				resetEnergySiphonTracking();
 			}
 		}
 		else if (hitsplat.getHitsplatType() == HitsplatID.HEAL)
@@ -1364,14 +1367,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		wardensP3PersonalDamage = 0;
 		wardensP3TotalDamage = 0;
 		wardensP4EnrageHeal = false;
-		resetEnergySiphonStats();
+		resetEnergySiphonTracking();
 		energySiphonBossDamage = 0;
 		personalDamage.clear();
 		totalDamage.clear();
 		totalHealing.clear();
 	}
 
-	private void resetEnergySiphonStats() {
+	private void resetEnergySiphonTracking() {
 		allEnergySiphonsKilled = false;
 		energySiphonTotalHealth = 0;
 	}
