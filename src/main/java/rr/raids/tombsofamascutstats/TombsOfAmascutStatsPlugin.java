@@ -75,7 +75,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final int OBELISK_ICON_ID = 21788;
 	private static final int ELIDNIS_WARDEN_PET_ID = 27354;
 	private static final int TUMEKENS_WARDEN_PET_ID = 27352;
-	private static final int KILLED_ENERGY_SIPHON_ID = 11773;
 	private static final int TOA_NEXUS_REGION_ID = 14160;
 	private static final int BABA_PUZZLE_ROOM_REGION_ID = 15186;
 	private static final int BABA_ROOM_REGION_ID = 15188;
@@ -127,17 +126,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			"Akkha", "Akkha's Shadow",
 			"Zebak",
 			"Obelisk", "Tumeken's Warden", "Elidinis' Warden", "Core", "Energy Siphon"
-	);
-
-	private static final Set<Integer> TOA_PARTY_MEMBER_VARBIT_IDS = ImmutableSet.of(
-			Varbits.TOA_MEMBER_0_HEALTH,
-			Varbits.TOA_MEMBER_1_HEALTH,
-			Varbits.TOA_MEMBER_2_HEALTH,
-			Varbits.TOA_MEMBER_3_HEALTH,
-			Varbits.TOA_MEMBER_4_HEALTH,
-			Varbits.TOA_MEMBER_5_HEALTH,
-			Varbits.TOA_MEMBER_6_HEALTH,
-			Varbits.TOA_MEMBER_7_HEALTH
 	);
 
 	@Inject
@@ -195,11 +183,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private int obeliskStartTick = -1;
 	private int wardensP2StartTick = -1;
 	private int wardensP3StartTick = -1;
-	private boolean fightingElidinisWardenInP3;
+	private boolean foughtElidinisWardenInP3;
 	private boolean wardensP4EnrageHeal = false;
-	private boolean allEnergySiphonsKilled = false;
 	private int wardensP3CompletionTime;
-	private int energySiphonTotalHealth;
 	private int energySiphonBossDamage;
 	private double wardensP3PersonalDamage;
 	private double wardensP3TotalDamage;
@@ -752,7 +738,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			infoBoxManager.addInfoBox(wardensP2InfoBox);
 			resetWardensP2();
 			wardensP3StartTick = client.getTickCount();
-			fightingElidinisWardenInP3 = true;
+			foughtElidinisWardenInP3 = true;
 		}
 		else if (WARDENS_P2_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find())
 		{
@@ -827,7 +813,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			infoBoxManager.addInfoBox(wardensP2InfoBox);
 			resetWardensP2();
 			wardensP3StartTick = client.getTickCount();
-			fightingElidinisWardenInP3 = false;
+			foughtElidinisWardenInP3 = false;
 		}
 		else if (WARDENS_COMPLETE.matcher(strippedMessage).find())
 		{
@@ -836,7 +822,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			int infoBoxIconId;
 			String bossName;
 
-			if (fightingElidinisWardenInP3)
+			if (foughtElidinisWardenInP3)
 			{
 				personalTotalDamage = personalDamage.getOrDefault("Elidinis' Warden", 0);
 				totalDamage = this.totalDamage.getOrDefault("Elidinis' Warden", 0);
@@ -1035,11 +1021,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				kephriPhase3CompletionTime = client.getTickCount() - kephriPhase3StartTick;
 				kephriPhase4StartTick = client.getTickCount();
 				break;
-			case NpcID.TUMEKENS_WARDEN_11762:
-			case NpcID.ELIDINIS_WARDEN_11761: //when Energy Siphon phase ends and Warden becomes vulnerable again
-				energySiphonTotalHealth = 0;
-				log.info("energySiphonTotalHealth reset to zero.");
-				break;
 		}
 
 		log.info("NPC changed from {} with id {} to {} with id {}",
@@ -1068,30 +1049,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
-			case NpcID.ENERGY_SIPHON:
-				int numberOfLivingPlayers = getLivingPlayerCount();
-				energySiphonTotalHealth += calculateEnergySiphonHealth(numberOfLivingPlayers);
-				log.info("energySiphonTotalHealth increased by {} to {}", calculateEnergySiphonHealth(numberOfLivingPlayers), energySiphonTotalHealth);
-		}
-	}
 
-	private int calculateEnergySiphonHealth(int numberOfLivingPlayers) {
-		int health = numberOfLivingPlayers / 2; //rounds down
-		return Math.max(health, 1); //rounds down to 0 if only 1 player, so in that case return 1
-	}
-
-	private int getLivingPlayerCount() {
-		int livingPlayerCount = 0;
-		for (Integer toaMemberVarbitId : TOA_PARTY_MEMBER_VARBIT_IDS)
-		{
-			int varbitValue = client.getVarbitValue(toaMemberVarbitId);
-			if (varbitValue != 0 && varbitValue != 30) //0 = no party member in that slot, 30 = dead
-			{
-				livingPlayerCount++;
-			}
 		}
-		log.info("Living player count = {}", livingPlayerCount);
-		return livingPlayerCount;
 	}
 
 	@Subscribe
@@ -1110,7 +1069,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		}
 
-		log.info("NPC despawned {}/{} with id {} and isDead = {}",
+		log.debug("NPC despawned {}/{} with id {} and isDead = {}",
 				Text.removeTags(event.getActor().getName()),
 				Text.removeTags(event.getNpc().getName()),
 				event.getNpc().getId(),
@@ -1157,6 +1116,19 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
+		String actorName = Text.removeTags(event.getActor().getName());
+		String interactingName = "null";
+		try {
+			interactingName = Text.removeTags(event.getActor().getInteracting().getName());
+		} catch (NullPointerException npe) {
+			log.error("getInteracting() on {} was null on game tick {}.", actorName, client.getTickCount());
+		}
+		log.info("{} was hit by {} for {} damage on game tick {}",
+				actorName,
+				interactingName,
+				event.getHitsplat().getAmount(),
+				client.getTickCount());
+
 		if (!toaInside)
 		{
 			return;
@@ -1188,20 +1160,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			npcName = npcName + " Shielded"; //save shield damage as separate enemy name due to damage Wardens receive from attacking the Core being saved already under Wardens' names
 		}
 
-//		log.info("NPC {} was hit for {}, now with health ratio {} and health scale {}", npc.getName(), hitsplat.getAmount(), npc.getHealthRatio(), npc.getHealthScale());
-
-		if (npc.getId() == NpcID.ENERGY_SIPHON || npc.getId() == KILLED_ENERGY_SIPHON_ID)
-		{
-			log.info("Energy Siphon hitsplat with id = {} and amount = {}", npc.getId(), hitsplat.getAmount());
-			energySiphonTotalHealth -= hitsplat.getAmount();
-			if (energySiphonTotalHealth == 0)
-			{
-				allEnergySiphonsKilled = true;
-				log.info("allEnergySiphonsKilled set to true.");
-			}
-			return;
-		}
-
 		if (hitsplat.isMine() || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_ME_HITSPLAT_ID || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID)
 		{
 			int myDmg = personalDamage.getOrDefault(npcName, 0);
@@ -1217,11 +1175,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			totalDmg += hitsplat.getAmount();
 			totalDamage.put(npcName, totalDmg);
 
-			if (allEnergySiphonsKilled && (npcName.equals("Elidinis' Warden") || npcName.equals("Tumeken's Warden"))) //if damage comes from killing all the Energy Siphons
+			if ((npcName.equals("Elidinis' Warden") || npcName.equals("Tumeken's Warden")) && (wardensP3StartTick >= 0) && (event.getActor().getInteracting() == null))
 			{
-				log.info("Hitsplat {} attributed to Energy Siphons", hitsplat.getAmount());
+				//if a Warden receives damage in P3 but no player is currently interacting with the Warden, attribute damage to Energy Siphons
+				log.info("Hitsplat {} attributed to Energy Siphons with getInteracting on Warden's being null on game tick {}", hitsplat.getAmount(), client.getTickCount());
 				energySiphonBossDamage += hitsplat.getAmount();
-				resetEnergySiphonTracking();
 			}
 		}
 		else if (hitsplat.getHitsplatType() == HitsplatID.HEAL)
@@ -1367,16 +1325,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		wardensP3PersonalDamage = 0;
 		wardensP3TotalDamage = 0;
 		wardensP4EnrageHeal = false;
-		resetEnergySiphonTracking();
 		energySiphonBossDamage = 0;
 		personalDamage.clear();
 		totalDamage.clear();
 		totalHealing.clear();
-	}
-
-	private void resetEnergySiphonTracking() {
-		allEnergySiphonsKilled = false;
-		energySiphonTotalHealth = 0;
 	}
 
 	private void resetAll()
