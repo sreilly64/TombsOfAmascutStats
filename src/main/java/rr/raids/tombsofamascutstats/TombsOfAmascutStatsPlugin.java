@@ -177,6 +177,15 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private int kephriTotalHealing;
 
 	private int akkhaStartTick = -1;
+	private int akkhasShadowOneStartTick;
+	private int akkha80PercentStartTick;
+	private int akkhasShadowTwoStartTick;
+	private int akkha60PercentStartTick;
+	private int akkhasShadowThreeStartTick;
+	private int akkha40PercentStartTick;
+	private int akkhasShadowFourStartTick;
+	private int akkha20PercentStartTick;
+	private int akkhaEnrageStartTick;
 
 	private int zebakStartTick = -1;
 
@@ -535,8 +544,20 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double totalDamage = totalAkkhaDamage + totalShadowDamage;
 			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
 
+			int akkhaPhaseOneCompletionTime = akkhasShadowOneStartTick - akkhaStartTick;
+			int akkhaShadowOneCompletionTime = akkha80PercentStartTick - akkhasShadowOneStartTick;
+			int akkhaPhaseTwoCompletionTime = akkhasShadowTwoStartTick - akkha80PercentStartTick;
+			int akkhaShadowTwoCompletionTime = akkha60PercentStartTick - akkhasShadowTwoStartTick;
+			int akkhaPhaseThreeCompletionTime = akkhasShadowThreeStartTick - akkha60PercentStartTick;
+			int akkhaShadowThreeCompletionTime = akkha40PercentStartTick - akkhasShadowThreeStartTick;
+			int akkhaPhaseFourCompletionTime = akkhasShadowFourStartTick - akkha40PercentStartTick;
+			int akkhaShadowFourCompletionTime = akkha20PercentStartTick - akkhasShadowFourStartTick;
+			int akkhaPhaseFiveCompletionTime = akkhaEnrageStartTick - akkha20PercentStartTick;
+			int akkhaEnrageCompletionTime = client.getTickCount() - akkhaEnrageStartTick;
+
 			int roomTicks;
 			String roomCompletionTime = "";
+			String splits = "Times:</br>";
 			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
@@ -544,6 +565,118 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				roomTicks = client.getTickCount() - akkhaStartTick;
 				roomCompletionTime = formatTime(roomTicks);
+				splits += "100% to 80% - " + formatTime(akkhaPhaseOneCompletionTime) +
+						"</br>" +
+						"Shadow 1 - " + formatTime(akkhaShadowOneCompletionTime) +
+						"</br>" +
+						"80% to 60% - " + formatTime(akkhaPhaseTwoCompletionTime) +
+						"</br>" +
+						"Shadow 2 - " + formatTime(akkhaShadowTwoCompletionTime) +
+						"</br>" +
+						"60% to 40% - " + formatTime(akkhaPhaseThreeCompletionTime) +
+						"</br>" +
+						"Shadow 3 - " + formatTime(akkhaShadowThreeCompletionTime) +
+						"</br>" +
+						"40% to 20% - " + formatTime(akkhaPhaseFourCompletionTime) +
+						"</br>" +
+						"Shadow 4 - " + formatTime(akkhaShadowFourCompletionTime) +
+						"</br>" +
+						"20% to 0% - " + formatTime(akkhaPhaseFiveCompletionTime) +
+						"</br>" +
+						"Enrage - " + formatTime(akkhaEnrageCompletionTime) +
+						"</br>" +
+						"Total - " + roomCompletionTime;
+
+				if (config.chatboxSplits())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("100% to 80% - ")
+									.append(Color.RED, formatTime(akkhaPhaseOneCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Shadow 1 - ")
+									.append(Color.RED, formatTime(akkhaShadowOneCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("80% to 60% - ")
+									.append(Color.RED, formatTime(akkhaPhaseTwoCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Shadow 2 - ")
+									.append(Color.RED, formatTime(akkhaShadowTwoCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("60% to 40% - ")
+									.append(Color.RED, formatTime(akkhaPhaseThreeCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Shadow 3 - ")
+									.append(Color.RED, formatTime(akkhaShadowThreeCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("40% to 20% - ")
+									.append(Color.RED, formatTime(akkhaPhaseFourCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Shadow 4 - ")
+									.append(Color.RED, formatTime(akkhaShadowFourCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("20% to 0% - ")
+									.append(Color.RED, formatTime(akkhaPhaseFiveCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Enrage - ")
+									.append(Color.RED, formatTime(akkhaEnrageCompletionTime))
+									.build()
+					);
+
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append("Total time - ")
+									.append(Color.RED, roomCompletionTime)
+									.build()
+					);
+				}
 			}
 
 			if (personalAkkhaDamage > 0)
@@ -591,7 +724,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
-			akkhaInfoBox = createInfoBox(AKKHA_PET_ID, "Akkha", roomCompletionTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomCompletionTime, "");
+			akkhaInfoBox = createInfoBox(AKKHA_PET_ID, "Akkha", roomCompletionTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, splits, "");
 			infoBoxManager.addInfoBox(akkhaInfoBox);
 			resetAkkha();
 		}
@@ -1021,6 +1154,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				kephriPhase3CompletionTime = client.getTickCount() - kephriPhase3StartTick;
 				kephriPhase4StartTick = client.getTickCount();
 				break;
+			case NpcID.AKKHA_11795:
+				akkhaEnrageStartTick = client.getTickCount();
+				break;
 		}
 
 		log.info("NPC changed from {} with id {} to {} with id {}",
@@ -1049,7 +1185,28 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
-
+			case NpcID.AKKHAS_SHADOW:
+				if (akkhasShadowOneStartTick == 0)
+				{
+					akkhasShadowOneStartTick = client.getTickCount();
+					log.info("akkhasShadowOneStartTick set to {}", client.getTickCount());
+				}
+				else if (akkhasShadowTwoStartTick == 0 && akkha80PercentStartTick > 0)
+				{
+					akkhasShadowTwoStartTick = client.getTickCount();
+					log.info("akkhasShadowTwoStartTick set to {}", client.getTickCount());
+				}
+				else if (akkhasShadowThreeStartTick == 0 && akkha60PercentStartTick > 0)
+				{
+					akkhasShadowThreeStartTick = client.getTickCount();
+					log.info("akkhasShadowThreeStartTick set to {}", client.getTickCount());
+				}
+				else if (akkhasShadowFourStartTick == 0 && akkha40PercentStartTick > 0)
+				{
+					akkhasShadowFourStartTick = client.getTickCount();
+					log.info("akkhasShadowFourStartTick set to {}", client.getTickCount());
+				}
+				break;
 		}
 	}
 
@@ -1066,7 +1223,28 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
-
+			case NpcID.AKKHAS_SHADOW:
+				if (akkha80PercentStartTick == 0)
+				{
+					akkha80PercentStartTick = client.getTickCount();
+					log.info("akkha80PercentStartTick set to {}", client.getTickCount());
+				}
+				else if (akkha60PercentStartTick == 0 && akkhasShadowTwoStartTick > 0)
+				{
+					akkha60PercentStartTick = client.getTickCount();
+					log.info("akkha60PercentStartTick set to {}", client.getTickCount());
+				}
+				else if (akkha40PercentStartTick == 0 && akkhasShadowThreeStartTick > 0)
+				{
+					akkha40PercentStartTick = client.getTickCount();
+					log.info("akkha40PercentStartTick set to {}", client.getTickCount());
+				}
+				else if (akkha20PercentStartTick == 0 && akkhasShadowFourStartTick > 0)
+				{
+					akkha20PercentStartTick = client.getTickCount();
+					log.info("akkha20PercentStartTick set to {}", client.getTickCount());
+				}
+				break;
 		}
 
 		log.debug("NPC despawned {}/{} with id {} and isDead = {}",
@@ -1287,6 +1465,15 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		totalDamage.remove("Akkha");
 		personalDamage.remove("Akkha's Shadow");
 		totalDamage.remove("Akkha's Shadow");
+		akkhasShadowOneStartTick = 0;
+		akkha80PercentStartTick = 0;
+		akkhasShadowTwoStartTick = 0;
+		akkha60PercentStartTick = 0;
+		akkhasShadowThreeStartTick = 0;
+		akkha40PercentStartTick = 0;
+		akkhasShadowFourStartTick = 0;
+		akkha20PercentStartTick = 0;
+		akkhaEnrageStartTick = 0;
 	}
 
 	private void resetZebak()
