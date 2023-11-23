@@ -1158,12 +1158,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				akkhaEnrageStartTick = client.getTickCount();
 				break;
 		}
-
-		log.info("NPC changed from {} with id {} to {} with id {}",
-				Text.removeTags(event.getOld().getName()),
-				event.getOld().getId(),
-				Text.removeTags(event.getNpc().getName()),
-				event.getNpc().getId());
 	}
 
 	@Subscribe
@@ -1177,34 +1171,24 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		NPC npc = event.getNpc();
 		int npcId = npc.getId();
 
-		log.info("NPC spawned {} with id {}, health ratio {} and health scale {}",
-				Text.removeTags(event.getNpc().getName()),
-				npcId,
-				npc.getHealthRatio(),
-				npc.getHealthScale());
-
 		switch (npcId)
 		{
 			case NpcID.AKKHAS_SHADOW:
 				if (akkhasShadowOneStartTick == 0)
 				{
 					akkhasShadowOneStartTick = client.getTickCount();
-					log.info("akkhasShadowOneStartTick set to {}", client.getTickCount());
 				}
 				else if (akkhasShadowTwoStartTick == 0 && akkha80PercentStartTick > 0)
 				{
 					akkhasShadowTwoStartTick = client.getTickCount();
-					log.info("akkhasShadowTwoStartTick set to {}", client.getTickCount());
 				}
 				else if (akkhasShadowThreeStartTick == 0 && akkha60PercentStartTick > 0)
 				{
 					akkhasShadowThreeStartTick = client.getTickCount();
-					log.info("akkhasShadowThreeStartTick set to {}", client.getTickCount());
 				}
 				else if (akkhasShadowFourStartTick == 0 && akkha40PercentStartTick > 0)
 				{
 					akkhasShadowFourStartTick = client.getTickCount();
-					log.info("akkhasShadowFourStartTick set to {}", client.getTickCount());
 				}
 				break;
 		}
@@ -1227,42 +1211,22 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				if (akkha80PercentStartTick == 0)
 				{
 					akkha80PercentStartTick = client.getTickCount();
-					log.info("akkha80PercentStartTick set to {}", client.getTickCount());
 				}
 				else if (akkha60PercentStartTick == 0 && akkhasShadowTwoStartTick > 0)
 				{
 					akkha60PercentStartTick = client.getTickCount();
-					log.info("akkha60PercentStartTick set to {}", client.getTickCount());
 				}
 				else if (akkha40PercentStartTick == 0 && akkhasShadowThreeStartTick > 0)
 				{
 					akkha40PercentStartTick = client.getTickCount();
-					log.info("akkha40PercentStartTick set to {}", client.getTickCount());
 				}
 				else if (akkha20PercentStartTick == 0 && akkhasShadowFourStartTick > 0)
 				{
 					akkha20PercentStartTick = client.getTickCount();
-					log.info("akkha20PercentStartTick set to {}", client.getTickCount());
 				}
 				break;
 		}
-
-		log.debug("NPC despawned {}/{} with id {} and isDead = {}",
-				Text.removeTags(event.getActor().getName()),
-				Text.removeTags(event.getNpc().getName()),
-				event.getNpc().getId(),
-				event.getActor().isDead());
 	}
-
-//	@Subscribe
-//	public void onGameTick(GameTick event)
-//	{
-//		if (!toaInside)
-//		{
-//			return;
-//		}
-//
-//	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
@@ -1294,19 +1258,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		String actorName = Text.removeTags(event.getActor().getName());
-		String interactingName = "null";
-		try {
-			interactingName = Text.removeTags(event.getActor().getInteracting().getName());
-		} catch (NullPointerException npe) {
-			log.error("getInteracting() on {} was null on game tick {}.", actorName, client.getTickCount());
-		}
-		log.info("{} was hit by {} for {} damage on game tick {}",
-				actorName,
-				interactingName,
-				event.getHitsplat().getAmount(),
-				client.getTickCount());
-
 		if (!toaInside)
 		{
 			return;
@@ -1356,7 +1307,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			if ((npcName.equals("Elidinis' Warden") || npcName.equals("Tumeken's Warden")) && (wardensP3StartTick >= 0) && (event.getActor().getInteracting() == null))
 			{
 				//if a Warden receives damage in P3 but no player is currently interacting with the Warden, attribute damage to Energy Siphons
-				log.info("Hitsplat {} attributed to Energy Siphons with getInteracting on Warden's being null on game tick {}", hitsplat.getAmount(), client.getTickCount());
 				energySiphonBossDamage += hitsplat.getAmount();
 			}
 		}
@@ -1391,16 +1341,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				|| hitSplatId == WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID
 				|| hitSplatId == WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID;
 	}
-
-//	@Subscribe
-//	public void onOverheadTextChanged(OverheadTextChanged event)
-//	{
-//		Actor npc = event.getActor();
-//		if (!(npc instanceof NPC) || !toaInside)
-//		{
-//			return;
-//		}
-//	}
 
 	private TombsOfAmascutStatsStatsInfoBox createInfoBox(int itemId, String room, String time, String percent, String damage, String splits, String healed)
 	{
