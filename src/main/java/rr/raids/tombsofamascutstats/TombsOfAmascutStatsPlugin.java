@@ -1154,7 +1154,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				kephriPhase3CompletionTime = client.getTickCount() - kephriPhase3StartTick;
 				kephriPhase4StartTick = client.getTickCount();
 				break;
-			case NpcID.AKKHA_11795:
+			case NpcID.AKKHA_11795: //Enrage phase Akkha
 				akkhaEnrageStartTick = client.getTickCount();
 				break;
 		}
