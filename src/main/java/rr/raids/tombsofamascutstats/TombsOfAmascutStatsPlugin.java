@@ -565,23 +565,23 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				roomTicks = client.getTickCount() - akkhaStartTick;
 				roomCompletionTime = formatTime(roomTicks);
-				splits += "100% to 80% - " + formatTime(akkhaPhaseOneCompletionTime) +
+				splits += "100%-80% - " + formatTime(akkhaPhaseOneCompletionTime) +
 						"</br>" +
 						"Shadow 1 - " + formatTime(akkhaShadowOneCompletionTime) +
 						"</br>" +
-						"80% to 60% - " + formatTime(akkhaPhaseTwoCompletionTime) +
+						"80%-60% - " + formatTime(akkhaPhaseTwoCompletionTime) +
 						"</br>" +
 						"Shadow 2 - " + formatTime(akkhaShadowTwoCompletionTime) +
 						"</br>" +
-						"60% to 40% - " + formatTime(akkhaPhaseThreeCompletionTime) +
+						"60%-40% - " + formatTime(akkhaPhaseThreeCompletionTime) +
 						"</br>" +
 						"Shadow 3 - " + formatTime(akkhaShadowThreeCompletionTime) +
 						"</br>" +
-						"40% to 20% - " + formatTime(akkhaPhaseFourCompletionTime) +
+						"40%-20% - " + formatTime(akkhaPhaseFourCompletionTime) +
 						"</br>" +
 						"Shadow 4 - " + formatTime(akkhaShadowFourCompletionTime) +
 						"</br>" +
-						"20% to 0% - " + formatTime(akkhaPhaseFiveCompletionTime) +
+						"20%-0% - " + formatTime(akkhaPhaseFiveCompletionTime) +
 						"</br>" +
 						"Enrage - " + formatTime(akkhaEnrageCompletionTime) +
 						"</br>" +
@@ -592,7 +592,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
-									.append("100% to 80% - ")
+									.append("100%-80% - ")
 									.append(Color.RED, formatTime(akkhaPhaseOneCompletionTime))
 									.build()
 					);
@@ -608,7 +608,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
-									.append("80% to 60% - ")
+									.append("80%-60% - ")
 									.append(Color.RED, formatTime(akkhaPhaseTwoCompletionTime))
 									.build()
 					);
@@ -624,7 +624,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
-									.append("60% to 40% - ")
+									.append("60%-40% - ")
 									.append(Color.RED, formatTime(akkhaPhaseThreeCompletionTime))
 									.build()
 					);
@@ -640,7 +640,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
-									.append("40% to 20% - ")
+									.append("40%-20% - ")
 									.append(Color.RED, formatTime(akkhaPhaseFourCompletionTime))
 									.build()
 					);
@@ -656,7 +656,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
-									.append("20% to 0% - ")
+									.append("20%-0% - ")
 									.append(Color.RED, formatTime(akkhaPhaseFiveCompletionTime))
 									.build()
 					);
