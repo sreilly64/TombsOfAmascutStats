@@ -1,14 +1,15 @@
-package hsj.external.theatreofbloodstats;
+package rr.raids.tombsofamascutstats;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
 import lombok.Getter;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
 import net.runelite.client.ui.overlay.infobox.InfoBoxPriority;
 import org.apache.commons.lang3.StringUtils;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+
 @Getter
-public class TheatreOfBloodStatsInfoBox extends InfoBox
+public class TombsOfAmascutStatsStatsInfoBox extends InfoBox
 {
 
 	private final String room;
@@ -17,13 +18,13 @@ public class TheatreOfBloodStatsInfoBox extends InfoBox
 	private final String damage;
 	private final String splits;
 	private final String healed;
-	private final TheatreOfBloodStatsConfig config;
+	private final TombsOfAmascutStatsStatsConfig config;
 
 
-	TheatreOfBloodStatsInfoBox(
+	TombsOfAmascutStatsStatsInfoBox(
 		BufferedImage image,
-		TheatreOfBloodStatsConfig config,
-		TheatreOfBloodStatsPlugin plugin,
+		TombsOfAmascutStatsStatsConfig config,
+		TombsOfAmascutStatsPlugin plugin,
 		String room,
 		String time,
 		String percent,
@@ -79,7 +80,7 @@ public class TheatreOfBloodStatsInfoBox extends InfoBox
 		if (config.infoBoxTooltipSplits() && !StringUtils.isEmpty(splits))
 		{
 			sb.append(splits);
-			if (config.infoBoxTooltipDmg() || config.infoBoxTooltipHealed())
+			if (config.infoBoxTooltipDmg())
 			{
 				sb.append("</br>");
 			}
@@ -88,15 +89,11 @@ public class TheatreOfBloodStatsInfoBox extends InfoBox
 		if (config.infoBoxTooltipDmg() && !StringUtils.isEmpty(damage) && !damage.equals("0"))
 		{
 			sb.append(damage).append(" (").append(percent).append("%)");
-			if (config.infoBoxTooltipHealed())
-			{
-				sb.append("</br>");
-			}
 		}
 
-		if (config.infoBoxTooltipHealed() && !StringUtils.isEmpty(healed))
+		if (!StringUtils.isEmpty(healed))
 		{
-			sb.append(healed);
+			sb.append("</br>").append(healed);
 		}
 
 		return sb.toString();

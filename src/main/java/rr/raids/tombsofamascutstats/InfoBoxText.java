@@ -1,4 +1,4 @@
-package hsj.external.theatreofbloodstats;
+package rr.raids.tombsofamascutstats;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
