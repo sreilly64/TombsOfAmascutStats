@@ -55,8 +55,7 @@ import java.util.regex.Pattern;
 @PluginDescriptor(
 	name = "Tombs of Amascut Stats",
 	description = "Tombs of Amascut phase times and damage tracker",
-	tags = {"combat", "raid", "pve", "pvm", "bosses", "toa"},
-	enabledByDefault = false
+	tags = {"combat", "raid", "pve", "pvm", "bosses", "toa"}
 )
 public class TombsOfAmascutStatsPlugin extends Plugin
 {
@@ -1154,7 +1153,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				kephriPhase3CompletionTime = client.getTickCount() - kephriPhase3StartTick;
 				kephriPhase4StartTick = client.getTickCount();
 				break;
-			case NpcID.AKKHA_11795:
+			case NpcID.AKKHA_11795: //Enrage phase Akkha
 				akkhaEnrageStartTick = client.getTickCount();
 				break;
 		}
