@@ -55,8 +55,7 @@ import java.util.regex.Pattern;
 @PluginDescriptor(
 	name = "Tombs of Amascut Stats",
 	description = "Tombs of Amascut phase times and damage tracker",
-	tags = {"combat", "raid", "pve", "pvm", "bosses", "toa"},
-	enabledByDefault = false
+	tags = {"combat", "raid", "pve", "pvm", "bosses", "toa"}
 )
 public class TombsOfAmascutStatsPlugin extends Plugin
 {
