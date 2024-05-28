@@ -1,5 +1,6 @@
 package rr.raids.tombsofamascutstats;
 
+import com.attacktimer.AttackTimerMetronomePlugin;
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
