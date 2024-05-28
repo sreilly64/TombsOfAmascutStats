@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.chat.ChatColorType;
@@ -194,9 +195,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private boolean foughtElidinisWardenInP3;
 	private boolean wardensP4EnrageHeal = false;
 	private int wardensP3CompletionTime;
+	private boolean energySiphonsWhereKilled = false;
 	private int energySiphonBossDamage;
 	private double wardensP3PersonalDamage;
 	private double wardensP3TotalDamage;
+	private LocalPoint lastEnergySiphonPosition;
 
 	private final Map<String, Integer> personalDamage = new HashMap<>();
 	private final Map<String, Integer> totalDamage = new HashMap<>();
@@ -1157,12 +1160,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				akkhaEnrageStartTick = client.getTickCount();
 				break;
 		}
-
-		log.info("NPC changed from {} with id {} to {} with id {}",
-				Text.removeTags(event.getOld().getName()),
-				event.getOld().getId(),
-				Text.removeTags(event.getNpc().getName()),
-				event.getNpc().getId());
 	}
 
 	@Subscribe
@@ -1176,34 +1173,24 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		NPC npc = event.getNpc();
 		int npcId = npc.getId();
 
-		log.info("NPC spawned {} with id {}, health ratio {} and health scale {}",
-				Text.removeTags(event.getNpc().getName()),
-				npcId,
-				npc.getHealthRatio(),
-				npc.getHealthScale());
-
 		switch (npcId)
 		{
 			case NpcID.AKKHAS_SHADOW:
 				if (akkhasShadowOneStartTick == 0)
 				{
 					akkhasShadowOneStartTick = client.getTickCount();
-					log.info("akkhasShadowOneStartTick set to {}", client.getTickCount());
 				}
 				else if (akkhasShadowTwoStartTick == 0 && akkha80PercentStartTick > 0)
 				{
 					akkhasShadowTwoStartTick = client.getTickCount();
-					log.info("akkhasShadowTwoStartTick set to {}", client.getTickCount());
 				}
 				else if (akkhasShadowThreeStartTick == 0 && akkha60PercentStartTick > 0)
 				{
 					akkhasShadowThreeStartTick = client.getTickCount();
-					log.info("akkhasShadowThreeStartTick set to {}", client.getTickCount());
 				}
 				else if (akkhasShadowFourStartTick == 0 && akkha40PercentStartTick > 0)
 				{
 					akkhasShadowFourStartTick = client.getTickCount();
-					log.info("akkhasShadowFourStartTick set to {}", client.getTickCount());
 				}
 				break;
 		}
@@ -1226,42 +1213,22 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				if (akkha80PercentStartTick == 0)
 				{
 					akkha80PercentStartTick = client.getTickCount();
-					log.info("akkha80PercentStartTick set to {}", client.getTickCount());
 				}
 				else if (akkha60PercentStartTick == 0 && akkhasShadowTwoStartTick > 0)
 				{
 					akkha60PercentStartTick = client.getTickCount();
-					log.info("akkha60PercentStartTick set to {}", client.getTickCount());
 				}
 				else if (akkha40PercentStartTick == 0 && akkhasShadowThreeStartTick > 0)
 				{
 					akkha40PercentStartTick = client.getTickCount();
-					log.info("akkha40PercentStartTick set to {}", client.getTickCount());
 				}
 				else if (akkha20PercentStartTick == 0 && akkhasShadowFourStartTick > 0)
 				{
 					akkha20PercentStartTick = client.getTickCount();
-					log.info("akkha20PercentStartTick set to {}", client.getTickCount());
 				}
 				break;
 		}
-
-		log.debug("NPC despawned {}/{} with id {} and isDead = {}",
-				Text.removeTags(event.getActor().getName()),
-				Text.removeTags(event.getNpc().getName()),
-				event.getNpc().getId(),
-				event.getActor().isDead());
 	}
-
-//	@Subscribe
-//	public void onGameTick(GameTick event)
-//	{
-//		if (!toaInside)
-//		{
-//			return;
-//		}
-//
-//	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
@@ -1293,19 +1260,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		String actorName = Text.removeTags(event.getActor().getName());
-		String interactingName = "null";
-		try {
-			interactingName = Text.removeTags(event.getActor().getInteracting().getName());
-		} catch (NullPointerException npe) {
-			log.error("getInteracting() on {} was null on game tick {}.", actorName, client.getTickCount());
-		}
-		log.info("{} was hit by {} for {} damage on game tick {}",
-				actorName,
-				interactingName,
-				event.getHitsplat().getAmount(),
-				client.getTickCount());
-
 		if (!toaInside)
 		{
 			return;
@@ -1327,7 +1281,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		if (npcName.contains("Scarab"))
 		{
-			npcName = "Scarabs"; //group all Scarab damage under one name
+			npcName = "Scarabs"; //group all damage to Scarab Overlords under one name
 		}
 
 		Hitsplat hitsplat = event.getHitsplat();
@@ -1337,7 +1291,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			npcName = npcName + " Shielded"; //save shield damage as separate enemy name due to damage Wardens receive from attacking the Core being saved already under Wardens' names
 		}
 
-		if (hitsplat.isMine() || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_ME_HITSPLAT_ID || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID)
+		if (hitsplat.isMine())
 		{
 			int myDmg = personalDamage.getOrDefault(npcName, 0);
 			int totalDmg = totalDamage.getOrDefault(npcName, 0);
@@ -1346,17 +1300,17 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			personalDamage.put(npcName, myDmg);
 			totalDamage.put(npcName, totalDmg);
 		}
-		else if (hitsplat.isOthers() || hitsplat.getHitsplatType() == WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID)
+		else if (hitsplat.isOthers())
 		{
 			int totalDmg = totalDamage.getOrDefault(npcName, 0);
 			totalDmg += hitsplat.getAmount();
 			totalDamage.put(npcName, totalDmg);
 
-			if ((npcName.equals("Elidinis' Warden") || npcName.equals("Tumeken's Warden")) && (wardensP3StartTick >= 0) && (event.getActor().getInteracting() == null))
+			if (isAWarden(npcName) && (wardensP3StartTick > -1) && energySiphonsWhereKilled)
 			{
-				//if a Warden receives damage in P3 but no player is currently interacting with the Warden, attribute damage to Energy Siphons
-				log.info("Hitsplat {} attributed to Energy Siphons with getInteracting on Warden's being null on game tick {}", hitsplat.getAmount(), client.getTickCount());
+				//if a Warden receives damage in P3 and Energy Siphon projectiles were detected, attribute damage to Energy Siphons
 				energySiphonBossDamage += hitsplat.getAmount();
+				energySiphonsWhereKilled = false;
 			}
 		}
 		else if (hitsplat.getHitsplatType() == HitsplatID.HEAL)
@@ -1365,7 +1319,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			healed += hitsplat.getAmount();
 			totalHealing.put(npcName, healed);
 
-			if (npcName.equals("Elidinis' Warden") || npcName.equals("Tumeken's Warden"))
+			if (isAWarden(npcName))
 			{
 				if (wardensP4EnrageHeal) //the Wardens heal twice, once at the very start of Phase 3 and once when they enter enrage phase/phase 4
 				{
@@ -1384,22 +1338,52 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 	}
 
+	@Subscribe
+	public void onProjectileMoved(ProjectileMoved event) {
+		if (event.getProjectile().getId() == 2226) //ID 2226 is that of the energy siphons (red skulls) as they fly to or from the Warden in P3
+		{
+			if (areLocalPointsEqual(event.getPosition(), lastEnergySiphonPosition))
+			{
+				if (!energySiphonsWhereKilled)
+				{
+					energySiphonsWhereKilled = true;
+				}
+			}
+			lastEnergySiphonPosition = event.getPosition();
+		}
+	}
+
+	private boolean areLocalPointsEqual(LocalPoint localPointOne, LocalPoint localPointTwo)
+	{
+		if (localPointOne == null || localPointTwo == null)
+		{
+			return false;
+		}
+		else {
+			return localPointOne.getX() == localPointTwo.getX() &&
+					localPointOne.getY() == localPointTwo.getY() &&
+					localPointOne.getWorldView() == localPointTwo.getWorldView();
+		}
+	}
+
+	private boolean isAWarden(String npcName) {
+		if (npcName == null)
+		{
+			return false;
+		}
+		else
+		{
+			return npcName.equalsIgnoreCase("Elidinis' Warden") || npcName.equalsIgnoreCase("Tumeken's Warden");
+		}
+
+	}
+
 	private boolean isWardensP2Hitsplat(Hitsplat hitsplat) {
 		int hitSplatId = hitsplat.getHitsplatType();
 		return hitSplatId == WARDENS_P2_DAMAGE_ME_HITSPLAT_ID
 				|| hitSplatId == WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID
 				|| hitSplatId == WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID;
 	}
-
-//	@Subscribe
-//	public void onOverheadTextChanged(OverheadTextChanged event)
-//	{
-//		Actor npc = event.getActor();
-//		if (!(npc instanceof NPC) || !toaInside)
-//		{
-//			return;
-//		}
-//	}
 
 	private TombsOfAmascutStatsStatsInfoBox createInfoBox(int itemId, String room, String time, String percent, String damage, String splits, String healed)
 	{
@@ -1512,6 +1496,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		wardensP3TotalDamage = 0;
 		wardensP4EnrageHeal = false;
 		energySiphonBossDamage = 0;
+		energySiphonsWhereKilled = false;
+		lastEnergySiphonPosition = null;
 		personalDamage.clear();
 		totalDamage.clear();
 		totalHealing.clear();
