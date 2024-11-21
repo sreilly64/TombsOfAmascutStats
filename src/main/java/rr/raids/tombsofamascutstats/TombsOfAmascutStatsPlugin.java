@@ -42,6 +42,9 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.Text;
+import org.apache.commons.lang3.StringUtils;
+import rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
+import rr.raids.tombsofamascutstats.stats.BabaStats;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -60,15 +63,35 @@ import java.util.regex.Pattern;
 )
 public class TombsOfAmascutStatsPlugin extends Plugin
 {
+	@Inject
+	private Client client;
+
+	@Inject
+	private TombsOfAmascutStatsStatsConfig config;
+
+	@Inject
+	private ChatMessageManager chatMessageManager;
+
+	@Inject
+	private InfoBoxManager infoBoxManager;
+
+	@Inject
+	private ItemManager itemManager;
+
+	@Inject
+	private ConfigManager configManager;
+
 	private static final DecimalFormat DMG_FORMAT = new DecimalFormat("#,##0");
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("##0.0");
+
+	private static final int KEPHRI_SHIELDED_HEALING_HITSPLAT_ID = HitsplatID.CYAN_UP;
+	private static final int WARDENS_P2_DAMAGE_ME_HITSPLAT_ID = HitsplatID.DAMAGE_ME_POISE;
+	private static final int WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID = HitsplatID.DAMAGE_OTHER_POISE;
+	private static final int WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID = HitsplatID.DAMAGE_MAX_ME_POISE;
+
 	private static final int PRECISE_TIMER = 11866;
 	private static final int TICK_LENGTH = 600;
-	private static final int WARDENS_P2_DAMAGE_ME_HITSPLAT_ID = 53;
-	private static final int WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID = 54;
-	private static final int WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID = 55;
 	private static final int BABA_PET_ID = 27383;
-	private static final int KEPHRI_SHIELDED_HEALING_HITSPLAT_ID = 11;
 	private static final int KEPHRI_PET_ID = 27384;
 	private static final int AKKHA_PET_ID = 27382;
 	private static final int ZEBAK_PET_ID = 27385;
@@ -128,24 +151,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			"Obelisk", "Tumeken's Warden", "Elidinis' Warden", "Core", "Energy Siphon"
 	);
 
-	@Inject
-	private Client client;
-
-	@Inject
-	private TombsOfAmascutStatsStatsConfig config;
-
-	@Inject
-	private ChatMessageManager chatMessageManager;
-
-	@Inject
-	private InfoBoxManager infoBoxManager;
-
-	@Inject
-	private ItemManager itemManager;
-
-	@Inject
-	private ConfigManager configManager;
-
 	private TombsOfAmascutStatsStatsInfoBox babaInfoBox;
 	private TombsOfAmascutStatsStatsInfoBox kephriInfoBox;
 	private TombsOfAmascutStatsStatsInfoBox akkhaInfoBox;
@@ -154,15 +159,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private TombsOfAmascutStatsStatsInfoBox wardensP2InfoBox;
 	private TombsOfAmascutStatsStatsInfoBox wardensP3InfoBox;
 
-	private boolean toaInside;
+	private boolean currentlyInsideToA;
 	private boolean instanced;
 	private boolean preciseTimers;
 
-	private int babaStartTick = -1;
-	private int babaPhase1CompletionTime;
-	private int babaBoulder1CompletionTime;
-	private int babaPhase2CompletionTime;
-	private int babaBoulder2CompletionTime;
+	private final BabaStats babaStats = new BabaStats();
 
 	private int kephriStartTick = -1;
 	private int kephriPhase1CompletionTime;
@@ -201,9 +202,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private double wardensP3TotalDamage;
 	private LocalPoint lastEnergySiphonPosition;
 
-	private final Map<String, Integer> personalDamage = new HashMap<>();
-	private final Map<String, Integer> totalDamage = new HashMap<>();
-	private final Map<String, Integer> totalHealing = new HashMap<>();
+	private final Map<String, Integer> personalDamage = new HashMap<>(); // key = enemy name, value = damage dealt to the enemy by the player
+	private final Map<String, Integer> totalDamage = new HashMap<>(); // key = enemy name, value = total damage dealt to the enemy
+	private final Map<String, Integer> totalHealing = new HashMap<>(); // key = enemy name, value = healing received by the enemy
 
 	@Provides
 	TombsOfAmascutStatsStatsConfig provideConfig(ConfigManager configManager)
@@ -226,13 +227,13 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			return;
 		}
 
-		int region = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
-		toaInside = TOA_ROOM_IDS.contains(region);
-
 		int preciseTimerVar = client.getVarbitValue(PRECISE_TIMER);
 		preciseTimers = preciseTimerVar == 1 ;
 
-		if (!toaInside)
+		int currentRegionId = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
+		currentlyInsideToA = TOA_ROOM_IDS.contains(currentRegionId);
+
+		if (!currentlyInsideToA)
 		{
 			resetAll();
 		}
@@ -241,7 +242,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
-		if (!toaInside || event.getType() != ChatMessageType.GAMEMESSAGE)
+		if (!currentlyInsideToA || event.getType() != ChatMessageType.GAMEMESSAGE)
 		{
 			return;
 		}
@@ -252,7 +253,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		if (BABA_STARTED.matcher(strippedMessage).find())
 		{
 			resetBaba();
-			babaStartTick = client.getTickCount();
+			babaStats.setStartTick(client.getTickCount());
 		}
 		else if (KEPHRI_STARTED.matcher(strippedMessage).find())
 		{
@@ -279,99 +280,47 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (BABA_COMPLETE.matcher(strippedMessage).find())
 		{
-			double personal = personalDamage.getOrDefault("Ba-Ba", 0);
-			double total = totalDamage.getOrDefault("Ba-Ba", 0);
-			double percent = (personal / total) * 100;
-			int roomTicks;
-			int babaPhase3CompletionTime;
-			String roomCompletionTime = "";
-			String splits = "Times:</br>";
-			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
+			int currentTick = client.getTickCount();
+			babaStats.getPhaseCompletionTimes().put(BabaPhase.PHASE_3, formatTime(currentTick - babaStats.getPreviousPhaseEndTick()));
+			babaStats.getPhaseCompletionTimes().put(BabaPhase.TOTAL, formatTime(currentTick - babaStats.getStartTick()));
 
-			if (babaStartTick > 0)
+			if (config.chatboxSplits())
 			{
-				roomTicks = client.getTickCount() - babaStartTick;
-				roomCompletionTime = formatTime(roomTicks);
-				babaPhase3CompletionTime = roomTicks - babaPhase1CompletionTime - babaBoulder1CompletionTime - babaPhase2CompletionTime - babaBoulder2CompletionTime;
-				splits += "Phase 1 - " + formatTime(babaPhase1CompletionTime) +
-						"</br>" +
-						"Boulders 1 - " + formatTime(babaBoulder1CompletionTime) +
-						"</br>" +
-						"Phase 2 - " + formatTime(babaPhase2CompletionTime) +
-						"</br>" +
-						"Boulders 2 - " + formatTime(babaBoulder2CompletionTime) +
-						"</br>" +
-						"Phase 3 - " + formatTime(babaPhase3CompletionTime) +
-						"</br>" +
-						"Total - " + roomCompletionTime;
-				if (config.chatboxSplits())
+				for (Map.Entry<BabaPhase, String> entry: babaStats.getPhaseCompletionTimes().entrySet())
 				{
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
-									.append("Phase 1 - ")
-									.append(Color.RED, formatTime(babaPhase1CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Boulders 1 - ")
-									.append(Color.RED, formatTime(babaBoulder1CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Phase 2 - ")
-									.append(Color.RED, formatTime(babaPhase2CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Boulders 2 - ")
-									.append(Color.RED, formatTime(babaBoulder2CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Phase 3 - ")
-									.append(Color.RED, formatTime(babaPhase3CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Total time - ")
-									.append(Color.RED, roomCompletionTime)
+									.append(entry.getKey().phaseName)
+									.append(Color.RED, entry.getValue())
 									.build()
 					);
 				}
 			}
 
-			if (personal > 0)
+			double personalDamageDealt = this.personalDamage.getOrDefault("Ba-Ba", 0);
+			double totalDamageDealt = totalDamage.getOrDefault("Ba-Ba", 0);
+			double percentageOfBossDamageDealt = (personalDamageDealt / totalDamageDealt) * 100;
+			String damage = "</br>Damage Dealt:</br>";
+
+			if (personalDamageDealt > 0)
 			{
-				damage += "Ba-Ba - " + DMG_FORMAT.format(personal);
+				damage += "Ba-Ba - " + DMG_FORMAT.format(personalDamageDealt);
 				if (config.chatboxDmg())
 				{
 					messages.add(
 							new ChatMessageBuilder()
 									.append(ChatColorType.NORMAL)
 									.append("Damage dealt to Ba-Ba - ")
-									.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
+									.append(Color.RED, DMG_FORMAT.format(personalDamageDealt) + " (" + DECIMAL_FORMAT.format(percentageOfBossDamageDealt) + "%)")
 									.build()
 					);
 				}
 			}
-			babaInfoBox = createInfoBox(BABA_PET_ID, "Ba-Ba", roomCompletionTime, DECIMAL_FORMAT.format(percent), damage, splits, "");
+
+			String splits = babaStats.getSplitTimes();
+			babaInfoBox = createInfoBox(BABA_PET_ID, "Ba-Ba", babaStats.getPhaseCompletionTimes().get(BabaPhase.TOTAL), DECIMAL_FORMAT.format(percentageOfBossDamageDealt), damage, splits, "");
 			infoBoxManager.addInfoBox(babaInfoBox);
 			resetBaba();
 		}
@@ -1103,31 +1052,35 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onNpcChanged(NpcChanged event)
 	{
-		if (!toaInside)
+		if (!currentlyInsideToA)
 		{
 			return;
 		}
 
 		NPC npc = event.getNpc();
 		int npcId = npc.getId();
+		int currentTick = client.getTickCount();
 
 		switch (npcId)
 		{
 			case NpcID.BABA_11780: //Ba-Ba leaps to the top of the room and starts throwing boulders
-				if (babaPhase1CompletionTime == 0)
+				if (StringUtils.isEmpty(babaStats.getPhaseCompletionTimes().get(BabaPhase.PHASE_1)))
 				{
-					babaPhase1CompletionTime = client.getTickCount() - babaStartTick;
+					babaStats.getPhaseCompletionTimes().put(BabaPhase.PHASE_1, formatTime(currentTick - babaStats.getStartTick()));
 				}
 				else
 				{
-					babaPhase2CompletionTime = client.getTickCount() - babaStartTick - babaPhase1CompletionTime - babaBoulder1CompletionTime;
+					babaStats.getPhaseCompletionTimes().put(BabaPhase.PHASE_2, formatTime(currentTick - babaStats.getPreviousPhaseEndTick()));
 				}
+				babaStats.setPreviousPhaseEndTick(currentTick);
 				break;
 			case NpcID.BABA: //end of first boulder phase
-				babaBoulder1CompletionTime = client.getTickCount() - babaStartTick - babaPhase1CompletionTime;
+				babaStats.getPhaseCompletionTimes().put(BabaPhase.BOULDERS_1, formatTime(currentTick - babaStats.getPreviousPhaseEndTick()));
+				babaStats.setPreviousPhaseEndTick(currentTick);
 				break;
 			case NpcID.BABA_11779: //end of second boulder phase
-				babaBoulder2CompletionTime = client.getTickCount() - babaStartTick - babaPhase1CompletionTime - babaBoulder1CompletionTime - babaPhase2CompletionTime;
+				babaStats.getPhaseCompletionTimes().put(BabaPhase.BOULDERS_2, formatTime(currentTick - babaStats.getPreviousPhaseEndTick()));
+				babaStats.setPreviousPhaseEndTick(currentTick);
 				break;
 			case NpcID.KEPHRI_11720: //Kephri's shield is depleted and Scarab Swarm phase starts
 				if (kephriFirstShieldDown)
@@ -1165,7 +1118,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onNpcSpawned(NpcSpawned event)
 	{
-		if (!toaInside)
+		if (!currentlyInsideToA)
 		{
 			return;
 		}
@@ -1199,7 +1152,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onNpcDespawned(NpcDespawned event)
 	{
-		if (!toaInside)
+		if (!currentlyInsideToA)
 		{
 			return;
 		}
@@ -1260,7 +1213,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		if (!toaInside)
+		if (!currentlyInsideToA)
 		{
 			return;
 		}
@@ -1413,11 +1366,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 	private void resetBaba()
 	{
-		babaStartTick = -1;
-		babaPhase1CompletionTime = 0;
-		babaBoulder1CompletionTime = 0;
-		babaPhase2CompletionTime = 0;
-		babaBoulder2CompletionTime = 0;
+		babaStats.resetStats();
 		personalDamage.remove("Ba-Ba");
 		totalDamage.remove("Ba-Ba");
 	}
