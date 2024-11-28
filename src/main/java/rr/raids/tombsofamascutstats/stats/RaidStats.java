@@ -5,7 +5,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public abstract class RaidStats {
+public abstract class RaidStats
+{
 
     private int startTick = -1;
     private int previousPhaseEndTick = -1;

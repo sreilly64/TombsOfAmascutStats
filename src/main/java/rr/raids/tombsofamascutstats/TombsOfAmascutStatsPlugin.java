@@ -43,8 +43,10 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.Text;
 import org.apache.commons.lang3.StringUtils;
+import rr.raids.tombsofamascutstats.stats.KephriStats;
 import rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
 import rr.raids.tombsofamascutstats.stats.BabaStats;
+import rr.raids.tombsofamascutstats.stats.phases.KephriPhase;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -164,15 +166,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private boolean preciseTimers;
 
 	private final BabaStats babaStats = new BabaStats();
+	private final KephriStats kephriStats = new KephriStats();
 
-	private int kephriStartTick = -1;
-	private int kephriPhase1CompletionTime;
-	private int kephriPhase2StartTick;
-	private int kephriPhase2CompletionTime;
-	private int kephriPhase3StartTick;
-	private int kephriPhase3CompletionTime;
-	private int kephriPhase4StartTick;
-	private boolean kephriFirstShieldDown = true;
 	private int kephriFirstDownHealing;
 	private int kephriSecondDownHealing;
 	private int kephriTotalHealing;
@@ -258,7 +253,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		else if (KEPHRI_STARTED.matcher(strippedMessage).find())
 		{
 			resetKephri();
-			kephriStartTick = client.getTickCount();
+			kephriStats.setStartTick(client.getTickCount());
 		}
 		else if (AKKHA_STARTED.matcher(strippedMessage).find())
 		{
@@ -280,7 +275,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (BABA_COMPLETE.matcher(strippedMessage).find())
 		{
+			if (babaStats.getStartTick() < 0)
+			{
+				return;
+			}
+
 			messages.clear();
+
+			//calculate final phase time and total kill time
 			int currentTick = client.getTickCount();
 			babaStats.getPhaseCompletionTimes().put(BabaPhase.PHASE_3, formatTime(currentTick - babaStats.getPreviousPhaseEndTick()));
 			babaStats.getPhaseCompletionTimes().put(BabaPhase.TOTAL, formatTime(currentTick - babaStats.getStartTick()));
@@ -302,30 +304,54 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double personalDamageDealt = this.personalDamage.getOrDefault("Ba-Ba", 0);
 			double totalDamageDealt = totalDamage.getOrDefault("Ba-Ba", 0);
 			double percentageOfBossDamageDealt = (personalDamageDealt / totalDamageDealt) * 100;
-			String damage = "</br>Damage Dealt:</br>";
+			String damage = "</br>Damage Dealt:</br>Ba-Ba - " + DMG_FORMAT.format(personalDamageDealt);
 
-			if (personalDamageDealt > 0)
+			if (config.chatboxDmg())
 			{
-				damage += "Ba-Ba - " + DMG_FORMAT.format(personalDamageDealt);
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Damage dealt to Ba-Ba - ")
-									.append(Color.RED, DMG_FORMAT.format(personalDamageDealt) + " (" + DECIMAL_FORMAT.format(percentageOfBossDamageDealt) + "%)")
-									.build()
-					);
-				}
+				messages.add(
+						new ChatMessageBuilder()
+								.append(ChatColorType.NORMAL)
+								.append("Damage dealt to Ba-Ba - ")
+								.append(Color.RED, DMG_FORMAT.format(personalDamageDealt) + " (" + DECIMAL_FORMAT.format(percentageOfBossDamageDealt) + "%)")
+								.build()
+				);
 			}
 
 			String splits = babaStats.getSplitTimes();
+
 			babaInfoBox = createInfoBox(BABA_PET_ID, "Ba-Ba", babaStats.getPhaseCompletionTimes().get(BabaPhase.TOTAL), DECIMAL_FORMAT.format(percentageOfBossDamageDealt), damage, splits, "");
 			infoBoxManager.addInfoBox(babaInfoBox);
 			resetBaba();
 		}
 		else if (KEPHRI_COMPLETE.matcher(strippedMessage).find())
 		{
+			if (kephriStats.getStartTick() < 0)
+			{
+				return;
+			}
+
+			messages.clear();
+
+			//calculate final phase time and total kill time
+			int currentTick = client.getTickCount();
+			kephriStats.getPhaseCompletionTimes().put(KephriPhase.GREEN_HP, formatTime(currentTick - kephriStats.getPreviousPhaseEndTick()));
+			kephriStats.getPhaseCompletionTimes().put(KephriPhase.TOTAL, formatTime(currentTick - kephriStats.getStartTick()));
+
+			if (config.chatboxSplits())
+			{
+				for (Map.Entry<KephriPhase, String> entry: kephriStats.getPhaseCompletionTimes().entrySet())
+				{
+					messages.add(
+							new ChatMessageBuilder()
+									.append(ChatColorType.NORMAL)
+									.append(entry.getKey().phaseName)
+									.append(Color.RED, entry.getValue())
+									.build()
+					);
+				}
+			}
+
+			String damage = "</br>Damage Dealt:</br>";
 			double personalKephri = personalDamage.getOrDefault("Kephri", 0);
 			double totalKephri = totalDamage.getOrDefault("Kephri", 0);
 			double percentKephri = (personalKephri / totalKephri) * 100;
@@ -338,11 +364,63 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			double totalDamage = totalKephri + totalScarab;
 			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
 
-			int roomTicks;
-			int kephriPhase4CompletionTime;
-			String roomCompletionTime = "";
-			String splits = "Times:</br>";
-			String damage = "</br>Damage Dealt:</br>";
+			damage+= "Kephri - " + DMG_FORMAT.format(personalKephri) + " (" +DECIMAL_FORMAT.format(percentKephri) + "%)" + "</br>";
+			if (config.chatboxDmg())
+			{
+				messages.add(
+						new ChatMessageBuilder()
+								.append(ChatColorType.NORMAL)
+								.append("First down shield healed - ")
+								.append(Color.RED, DMG_FORMAT.format(kephriFirstDownHealing))
+								.build()
+				);
+				messages.add(
+						new ChatMessageBuilder()
+								.append(ChatColorType.NORMAL)
+								.append("Second down shield healed - ")
+								.append(Color.RED, DMG_FORMAT.format(kephriSecondDownHealing))
+								.build()
+				);
+				messages.add(
+						new ChatMessageBuilder()
+								.append(ChatColorType.NORMAL)
+								.append("Total shield healed - ")
+								.append(Color.RED, DMG_FORMAT.format(kephriTotalHealing))
+								.build()
+				);
+				messages.add(
+						new ChatMessageBuilder()
+								.append(ChatColorType.NORMAL)
+								.append("Damage dealt to Kephri - ")
+								.append(Color.RED, DMG_FORMAT.format(personalKephri) + " (" + DECIMAL_FORMAT.format(percentKephri) + "%)")
+								.build()
+				);
+			}
+
+			damage+= "Scarabs - " + DMG_FORMAT.format(personalScarab) + " (" +DECIMAL_FORMAT.format(percentScarab) + "%)" + "</br>";
+			if (config.chatboxDmg())
+			{
+				messages.add(
+						new ChatMessageBuilder()
+								.append(ChatColorType.NORMAL)
+								.append("Damage dealt to Scarabs - ")
+								.append(Color.RED, DMG_FORMAT.format(personalScarab) + " (" + DECIMAL_FORMAT.format(percentScarab) + "%)")
+								.build()
+				);
+			}
+
+			damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
+			if (config.chatboxDmg())
+			{
+				messages.add(
+						new ChatMessageBuilder()
+								.append(ChatColorType.NORMAL)
+								.append("Total damage dealt - ")
+								.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)")
+								.build()
+				);
+			}
+
 			String healing = "</br>Boss Healing:" +
 					"</br>" +
 					"First down healed - " + DMG_FORMAT.format(kephriFirstDownHealing) +
@@ -350,134 +428,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					"Second down healed - " + DMG_FORMAT.format(kephriSecondDownHealing) +
 					"</br>" +
 					"Total shield healed - " + DMG_FORMAT.format(kephriTotalHealing);
-			messages.clear();
 
-			if (kephriStartTick > 0)
-			{
-				roomTicks = client.getTickCount() - kephriStartTick;
-				roomCompletionTime = formatTime(roomTicks);
-				kephriPhase4CompletionTime = client.getTickCount() - kephriPhase4StartTick;
+			String splits = kephriStats.getSplitTimes();
 
-				splits += "Shield 1 - " + formatTime(kephriPhase1CompletionTime) +
-						"</br>" +
-						"Shield 2 - " + formatTime(kephriPhase2CompletionTime) +
-						"</br>" +
-						"Shield 3 - " + formatTime(kephriPhase3CompletionTime) +
-						"</br>" +
-						"Green Health - " + formatTime(kephriPhase4CompletionTime) +
-						"</br>" +
-						"Total - " + roomCompletionTime;
-				if (config.chatboxSplits())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Shield 1 - ")
-									.append(Color.RED, formatTime(kephriPhase1CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Shield 2 - ")
-									.append(Color.RED, formatTime(kephriPhase2CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Shield 3 - ")
-									.append(Color.RED, formatTime(kephriPhase3CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Green Health - ")
-									.append(Color.RED, formatTime(kephriPhase4CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Total time - ")
-									.append(Color.RED, roomCompletionTime)
-									.build()
-					);
-				}
-			}
-
-			if (personalKephri > 0)
-			{
-				damage+= "Kephri - " + DMG_FORMAT.format(personalKephri) + " (" +DECIMAL_FORMAT.format(percentKephri) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("First down shield healed - ")
-									.append(Color.RED, DMG_FORMAT.format(kephriFirstDownHealing))
-									.build()
-					);
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Second down shield healed - ")
-									.append(Color.RED, DMG_FORMAT.format(kephriSecondDownHealing))
-									.build()
-					);
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Total shield healed - ")
-									.append(Color.RED, DMG_FORMAT.format(kephriTotalHealing))
-									.build()
-					);
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Damage dealt to Kephri - ")
-									.append(Color.RED, DMG_FORMAT.format(personalKephri) + " (" + DECIMAL_FORMAT.format(percentKephri) + "%)")
-									.build()
-					);
-				}
-			}
-
-			if (personalScarab > 0)
-			{
-				damage+= "Scarabs - " + DMG_FORMAT.format(personalScarab) + " (" +DECIMAL_FORMAT.format(percentScarab) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Damage dealt to Scarabs - ")
-									.append(Color.RED, DMG_FORMAT.format(personalScarab) + " (" + DECIMAL_FORMAT.format(percentScarab) + "%)")
-									.build()
-					);
-				}
-			}
-
-			if (personalTotalDamage > 0)
-			{
-				damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Total damage dealt - ")
-									.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)")
-									.build()
-					);
-				}
-			}
-
-			kephriInfoBox = createInfoBox(KEPHRI_PET_ID, "Kephri", roomCompletionTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, splits, healing);
+			kephriInfoBox = createInfoBox(KEPHRI_PET_ID, "Kephri", kephriStats.getPhaseCompletionTimes().get(KephriPhase.TOTAL), DECIMAL_FORMAT.format(percentTotalDamage), damage, splits, healing);
 			infoBoxManager.addInfoBox(kephriInfoBox);
 			resetKephri();
 		}
@@ -1064,7 +1018,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		switch (npcId)
 		{
 			case NpcID.BABA_11780: //Ba-Ba leaps to the top of the room and starts throwing boulders
-				if (StringUtils.isEmpty(babaStats.getPhaseCompletionTimes().get(BabaPhase.PHASE_1)))
+				if (StringUtils.isEmpty(babaStats.getPhaseCompletionTimes().get(BabaPhase.PHASE_1))) //if a time for phase 1 has not yet been recorded
 				{
 					babaStats.getPhaseCompletionTimes().put(BabaPhase.PHASE_1, formatTime(currentTick - babaStats.getStartTick()));
 				}
@@ -1083,31 +1037,32 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				babaStats.setPreviousPhaseEndTick(currentTick);
 				break;
 			case NpcID.KEPHRI_11720: //Kephri's shield is depleted and Scarab Swarm phase starts
-				if (kephriFirstShieldDown)
+				if (kephriStats.isKephriFirstShieldDown())
 				{
-					kephriPhase1CompletionTime = client.getTickCount() - kephriStartTick;
+					kephriStats.getPhaseCompletionTimes().put(KephriPhase.SHIELD_1, formatTime(currentTick - kephriStats.getStartTick()));
 				}
 				else
 				{
-					kephriPhase2CompletionTime = client.getTickCount() - kephriPhase2StartTick;
+					kephriStats.getPhaseCompletionTimes().put(KephriPhase.SHIELD_2, formatTime(currentTick - kephriStats.getPreviousPhaseEndTick()));
 				}
+				kephriStats.setPreviousPhaseEndTick(currentTick);
 				break;
 			case NpcID.KEPHRI: //Kephri starts attacking again after regaining her shield
-				if (kephriFirstShieldDown)
+				if (kephriStats.isKephriFirstShieldDown())
 				{
 					kephriFirstDownHealing = kephriTotalHealing;
-					kephriFirstShieldDown = false;
-					kephriPhase2StartTick = client.getTickCount();
+					kephriStats.setKephriFirstShieldDown(false);
+					kephriStats.setPreviousPhaseEndTick(currentTick);
 				}
 				else
 				{
 					kephriSecondDownHealing = kephriTotalHealing - kephriFirstDownHealing;
-					kephriPhase3StartTick = client.getTickCount();
+					kephriStats.setPreviousPhaseEndTick(currentTick);
 				}
 				break;
 			case NpcID.KEPHRI_11721: //Kephri's green health bar becomes exposed
-				kephriPhase3CompletionTime = client.getTickCount() - kephriPhase3StartTick;
-				kephriPhase4StartTick = client.getTickCount();
+				kephriStats.getPhaseCompletionTimes().put(KephriPhase.SHIELD_3, formatTime(currentTick - kephriStats.getPreviousPhaseEndTick()));
+				kephriStats.setPreviousPhaseEndTick(currentTick);
 				break;
 			case NpcID.AKKHA_11795: //Enrage phase Akkha
 				akkhaEnrageStartTick = client.getTickCount();
@@ -1373,17 +1328,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 	private void resetKephri()
 	{
-		kephriStartTick = -1;
-		kephriPhase1CompletionTime = 0;
-		kephriPhase2StartTick = 0;
-		kephriPhase2CompletionTime = 0;
-		kephriPhase3StartTick = 0;
-		kephriPhase3CompletionTime = 0;
-		kephriPhase4StartTick = 0;
+		kephriStats.resetStats();
 		kephriFirstDownHealing = 0;
 		kephriSecondDownHealing = 0;
 		kephriTotalHealing = 0;
-		kephriFirstShieldDown = true;
 		personalDamage.remove("Kephri");
 		totalDamage.remove("Kephri");
 		personalDamage.remove("Scarabs");
