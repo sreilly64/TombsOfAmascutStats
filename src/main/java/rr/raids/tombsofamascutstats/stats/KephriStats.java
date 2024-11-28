@@ -13,7 +13,9 @@ public class KephriStats extends RaidStats
 {
 
     private Map<KephriPhase, String> phaseCompletionTimes; // key = phase name, value = phase completion time
-    private boolean kephriFirstShieldDown = true;
+    private boolean isFirstShieldDown = true;
+    private int firstShieldDownHealing = 0;
+    private int shieldTotalHealing = 0;
 
     public KephriStats()
     {
@@ -29,11 +31,23 @@ public class KephriStats extends RaidStats
         }
     }
 
+    public void addToKephriShieldTotalHealing(int amount)
+    {
+        shieldTotalHealing += amount;
+    }
+
+    public int getSecondShieldDownHealing()
+    {
+        return shieldTotalHealing - firstShieldDownHealing;
+    }
+
     @Override
     public void resetStats() {
         setStartTick(-1);
         setPreviousPhaseEndTick(-1);
-        kephriFirstShieldDown = true;
+        isFirstShieldDown = true;
+        firstShieldDownHealing = 0;
+        shieldTotalHealing = 0;
         phaseCompletionTimes.replaceAll((k,v) -> null);
     }
 

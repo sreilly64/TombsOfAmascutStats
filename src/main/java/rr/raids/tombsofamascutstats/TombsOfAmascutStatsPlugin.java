@@ -168,10 +168,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private final BabaStats babaStats = new BabaStats();
 	private final KephriStats kephriStats = new KephriStats();
 
-	private int kephriFirstDownHealing;
-	private int kephriSecondDownHealing;
-	private int kephriTotalHealing;
-
 	private int akkhaStartTick = -1;
 	private int akkhasShadowOneStartTick;
 	private int akkha80PercentStartTick;
@@ -291,13 +287,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				for (Map.Entry<BabaPhase, String> entry: babaStats.getPhaseCompletionTimes().entrySet())
 				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append(entry.getKey().phaseName)
-									.append(Color.RED, entry.getValue())
-									.build()
-					);
+					String phaseName = entry.getKey().phaseName;
+					String phaseTime = entry.getValue();
+					messages.add(getStatsChatMessage(phaseName, phaseTime));
 				}
 			}
 
@@ -308,13 +300,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 			if (config.chatboxDmg())
 			{
-				messages.add(
-						new ChatMessageBuilder()
-								.append(ChatColorType.NORMAL)
-								.append("Damage dealt to Ba-Ba - ")
-								.append(Color.RED, DMG_FORMAT.format(personalDamageDealt) + " (" + DECIMAL_FORMAT.format(percentageOfBossDamageDealt) + "%)")
-								.build()
-				);
+				messages.add(getStatsChatMessage("Damage dealt to Ba-Ba - ", DMG_FORMAT.format(personalDamageDealt) + " (" + DECIMAL_FORMAT.format(percentageOfBossDamageDealt) + "%)"));
 			}
 
 			String splits = babaStats.getSplitTimes();
@@ -341,13 +327,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				for (Map.Entry<KephriPhase, String> entry: kephriStats.getPhaseCompletionTimes().entrySet())
 				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append(entry.getKey().phaseName)
-									.append(Color.RED, entry.getValue())
-									.build()
-					);
+					String phaseName = entry.getKey().phaseName;
+					String phaseTime = entry.getValue();
+					messages.add(getStatsChatMessage(phaseName, phaseTime));
 				}
 			}
 
@@ -367,67 +349,31 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			damage+= "Kephri - " + DMG_FORMAT.format(personalKephri) + " (" +DECIMAL_FORMAT.format(percentKephri) + "%)" + "</br>";
 			if (config.chatboxDmg())
 			{
-				messages.add(
-						new ChatMessageBuilder()
-								.append(ChatColorType.NORMAL)
-								.append("First down shield healed - ")
-								.append(Color.RED, DMG_FORMAT.format(kephriFirstDownHealing))
-								.build()
-				);
-				messages.add(
-						new ChatMessageBuilder()
-								.append(ChatColorType.NORMAL)
-								.append("Second down shield healed - ")
-								.append(Color.RED, DMG_FORMAT.format(kephriSecondDownHealing))
-								.build()
-				);
-				messages.add(
-						new ChatMessageBuilder()
-								.append(ChatColorType.NORMAL)
-								.append("Total shield healed - ")
-								.append(Color.RED, DMG_FORMAT.format(kephriTotalHealing))
-								.build()
-				);
-				messages.add(
-						new ChatMessageBuilder()
-								.append(ChatColorType.NORMAL)
-								.append("Damage dealt to Kephri - ")
-								.append(Color.RED, DMG_FORMAT.format(personalKephri) + " (" + DECIMAL_FORMAT.format(percentKephri) + "%)")
-								.build()
-				);
+				messages.add(getStatsChatMessage("First down shield healed - ", DMG_FORMAT.format(kephriStats.getFirstShieldDownHealing())));
+				messages.add(getStatsChatMessage("Second down shield healed - ", DMG_FORMAT.format(kephriStats.getSecondShieldDownHealing())));
+				messages.add(getStatsChatMessage("Total shield healed - ", DMG_FORMAT.format(kephriStats.getShieldTotalHealing())));
+				messages.add(getStatsChatMessage("Damage dealt to Kephri - ", DMG_FORMAT.format(personalKephri) + " (" + DECIMAL_FORMAT.format(percentKephri) + "%)"));
 			}
 
 			damage+= "Scarabs - " + DMG_FORMAT.format(personalScarab) + " (" +DECIMAL_FORMAT.format(percentScarab) + "%)" + "</br>";
 			if (config.chatboxDmg())
 			{
-				messages.add(
-						new ChatMessageBuilder()
-								.append(ChatColorType.NORMAL)
-								.append("Damage dealt to Scarabs - ")
-								.append(Color.RED, DMG_FORMAT.format(personalScarab) + " (" + DECIMAL_FORMAT.format(percentScarab) + "%)")
-								.build()
-				);
+				messages.add(getStatsChatMessage("Damage dealt to Scarabs - ", DMG_FORMAT.format(personalScarab) + " (" + DECIMAL_FORMAT.format(percentScarab) + "%)"));
 			}
 
 			damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
 			if (config.chatboxDmg())
 			{
-				messages.add(
-						new ChatMessageBuilder()
-								.append(ChatColorType.NORMAL)
-								.append("Total damage dealt - ")
-								.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)")
-								.build()
-				);
+				messages.add(getStatsChatMessage("Total damage dealt - ", DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)"));
 			}
 
 			String healing = "</br>Boss Healing:" +
 					"</br>" +
-					"First down healed - " + DMG_FORMAT.format(kephriFirstDownHealing) +
+					"First down healed - " + DMG_FORMAT.format(kephriStats.getFirstShieldDownHealing()) +
 					"</br>" +
-					"Second down healed - " + DMG_FORMAT.format(kephriSecondDownHealing) +
+					"Second down healed - " + DMG_FORMAT.format(kephriStats.getSecondShieldDownHealing()) +
 					"</br>" +
-					"Total shield healed - " + DMG_FORMAT.format(kephriTotalHealing);
+					"Total shield healed - " + DMG_FORMAT.format(kephriStats.getShieldTotalHealing());
 
 			String splits = kephriStats.getSplitTimes();
 
@@ -1037,7 +983,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				babaStats.setPreviousPhaseEndTick(currentTick);
 				break;
 			case NpcID.KEPHRI_11720: //Kephri's shield is depleted and Scarab Swarm phase starts
-				if (kephriStats.isKephriFirstShieldDown())
+				if (kephriStats.isFirstShieldDown())
 				{
 					kephriStats.getPhaseCompletionTimes().put(KephriPhase.SHIELD_1, formatTime(currentTick - kephriStats.getStartTick()));
 				}
@@ -1048,17 +994,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				kephriStats.setPreviousPhaseEndTick(currentTick);
 				break;
 			case NpcID.KEPHRI: //Kephri starts attacking again after regaining her shield
-				if (kephriStats.isKephriFirstShieldDown())
+				if (kephriStats.isFirstShieldDown())
 				{
-					kephriFirstDownHealing = kephriTotalHealing;
-					kephriStats.setKephriFirstShieldDown(false);
-					kephriStats.setPreviousPhaseEndTick(currentTick);
+					kephriStats.setFirstShieldDownHealing(kephriStats.getShieldTotalHealing());
+					kephriStats.setFirstShieldDown(false);
 				}
-				else
-				{
-					kephriSecondDownHealing = kephriTotalHealing - kephriFirstDownHealing;
-					kephriStats.setPreviousPhaseEndTick(currentTick);
-				}
+				kephriStats.setPreviousPhaseEndTick(currentTick);
 				break;
 			case NpcID.KEPHRI_11721: //Kephri's green health bar becomes exposed
 				kephriStats.getPhaseCompletionTimes().put(KephriPhase.SHIELD_3, formatTime(currentTick - kephriStats.getPreviousPhaseEndTick()));
@@ -1242,7 +1183,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (hitsplat.getHitsplatType() == KEPHRI_SHIELDED_HEALING_HITSPLAT_ID && npcName.equals("Kephri")) //Hitsplat ID is shared with Palm of Resourcefulness
 		{
-			kephriTotalHealing += hitsplat.getAmount();
+			kephriStats.addToKephriShieldTotalHealing(hitsplat.getAmount());
 		}
 	}
 
@@ -1319,6 +1260,15 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 	}
 
+	private String getStatsChatMessage(String key, String value)
+	{
+		return new ChatMessageBuilder()
+				.append(ChatColorType.NORMAL)
+				.append(key)
+				.append(Color.RED, value)
+				.build();
+	}
+
 	private void resetBaba()
 	{
 		babaStats.resetStats();
@@ -1329,9 +1279,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private void resetKephri()
 	{
 		kephriStats.resetStats();
-		kephriFirstDownHealing = 0;
-		kephriSecondDownHealing = 0;
-		kephriTotalHealing = 0;
 		personalDamage.remove("Kephri");
 		totalDamage.remove("Kephri");
 		personalDamage.remove("Scarabs");
