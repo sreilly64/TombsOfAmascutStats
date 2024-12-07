@@ -1,35 +1,70 @@
 package rr.raids.tombsofamascutstats.stats;
 
+import lombok.Getter;
+import lombok.Setter;
+import rr.raids.tombsofamascutstats.stats.phases.ZebakPhase;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.*;
+
+@Getter
+@Setter
 public class ZebakStats extends BossStats
 {
+
+    private Map<ZebakPhase, String> phaseCompletionTimes = new LinkedHashMap<>(); // key = phase name, value = phase completion time
+
+    public ZebakStats()
+    {
+        super();
+    }
 
     @Override
     void initializeSetOfEnemyNames()
     {
-
+        getEnemyNames().add(ZEBAK);
     }
 
     @Override
     void initializePhaseCompletionTimesMap()
     {
-
+        for (ZebakPhase phase: ZebakPhase.values())
+        {
+            phaseCompletionTimes.put(phase, null);
+        }
     }
 
     @Override
     public void resetStats()
     {
-
+        setStartTick(-1);
+        setPreviousPhaseEndTick(-1);
+        initializePhaseCompletionTimesMap();
+        initializeBossDamageMaps();
     }
 
     @Override
     public String getInfoBoxSplitTimesString()
     {
-        return null;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Times:</br>");
+        for (Map.Entry<ZebakPhase, String> entry: phaseCompletionTimes.entrySet())
+        {
+            String phaseName = entry.getKey().phaseName;
+            String phaseTime = entry.getValue();
+            stringBuilder.append(phaseName).append(phaseTime).append("</br>");
+        }
+        stringBuilder.delete(stringBuilder.lastIndexOf("</br>"), stringBuilder.length());
+        return stringBuilder.toString();
     }
 
     @Override
     public String getInfoBoxBossDamageString()
     {
-        return null;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("</br>Damage Dealt:</br>Zebak - ")
+                .append(DMG_FORMAT.format(getPersonalDamage().get(ZEBAK)));
+        return stringBuilder.toString();
     }
 }

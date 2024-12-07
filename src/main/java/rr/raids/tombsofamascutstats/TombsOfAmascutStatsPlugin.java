@@ -47,6 +47,7 @@ import rr.raids.tombsofamascutstats.stats.*;
 import rr.raids.tombsofamascutstats.stats.phases.AkkhaPhase;
 import rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
 import rr.raids.tombsofamascutstats.stats.phases.KephriPhase;
+import rr.raids.tombsofamascutstats.stats.phases.ZebakPhase;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -178,8 +179,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			babaStats, kephriStats, akkhaStats, zebakStats, obeliskStats
 	);
 
-	private int zebakStartTick = -1;
-
 	private int obeliskStartTick = -1;
 	private int wardensP2StartTick = -1;
 	private int wardensP3StartTick = -1;
@@ -257,8 +256,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (ZEBAK_STARTED.matcher(strippedMessage).find())
 		{
-			resetZebak();
-			zebakStartTick = client.getTickCount();
+			zebakStats.resetStats();
+			zebakStats.setStartTick(client.getTickCount());
 		}
 		else if (WARDENS_STARTED.matcher(strippedMessage).find())
 		{
@@ -386,37 +385,28 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (ZEBAK_COMPLETE.matcher(strippedMessage).find())
 		{
-			double personal = personalDamage.getOrDefault("Zebak", 0);
-			double total = totalDamage.getOrDefault("Zebak", 0);
-			double percent = (personal / total) * 100;
-			int roomTicks;
-			String roomCompletionTime = "";
-			String damage = "</br>Damage Dealt:</br>";
+			if (zebakStats.getStartTick() < 0)
+			{
+				return;
+			}
+
 			messages.clear();
 
-			if (zebakStartTick > 0)
+			//calculate final phase time and total kill time
+			int currentTick = client.getTickCount();
+			zebakStats.getPhaseCompletionTimes().put(ZebakPhase.TOTAL, formatTime(currentTick - zebakStats.getStartTick()));
+
+			if (config.chatboxDmg())
 			{
-				roomTicks = client.getTickCount() - zebakStartTick;
-				roomCompletionTime = formatTime(roomTicks);
+				messages.add(getStatsChatMessage("Damage dealt to Zebak - ", DMG_FORMAT.format(zebakStats.getPersonalDamage().get(ZEBAK)) + " (" + DECIMAL_FORMAT.format(zebakStats.getPercentageOfDamageDealt(ZEBAK)) + "%)"));
 			}
 
-			if (personal > 0)
-			{
-				damage += "Zebak - " + DMG_FORMAT.format(personal);
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Damage dealt to Zebak - ")
-									.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-									.build()
-					);
-				}
-			}
-			zebakInfoBox = createInfoBox(ZEBAK_PET_ID, "Zebak", roomCompletionTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomCompletionTime, "");
+			String damage = zebakStats.getInfoBoxBossDamageString();
+			String splits = zebakStats.getInfoBoxSplitTimesString();
+
+			zebakInfoBox = createInfoBox(ZEBAK_PET_ID, ZEBAK, zebakStats.getPhaseCompletionTimes().get(ZebakPhase.TOTAL), DECIMAL_FORMAT.format(zebakStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
 			infoBoxManager.addInfoBox(zebakInfoBox);
-			resetZebak();
+			zebakStats.resetStats();
 		}
 		else if (OBELISK_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find() || OBELISK_COMPLETE_ELIDINIS_SPAWNS.matcher(strippedMessage).find())
 		{
@@ -1085,13 +1075,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				.append(key)
 				.append(Color.RED, value)
 				.build();
-	}
-
-	private void resetZebak()
-	{
-		zebakStartTick = -1;
-		personalDamage.remove("Zebak");
-		totalDamage.remove("Zebak");
 	}
 
 	private void resetObelisk()

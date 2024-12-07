@@ -29,6 +29,7 @@ public abstract class BossStats
     {
         initializeSetOfEnemyNames();
         initializeBossDamageMaps();
+        initializePhaseCompletionTimesMap();
     }
 
     void initializeBossDamageMaps()

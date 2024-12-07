@@ -19,7 +19,6 @@ public class BabaStats extends BossStats
     public BabaStats()
     {
         super();
-        initializePhaseCompletionTimesMap();
     }
 
     void initializeSetOfEnemyNames()
@@ -65,7 +64,6 @@ public class BabaStats extends BossStats
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("</br>Damage Dealt:</br>Ba-Ba - ")
                 .append(DMG_FORMAT.format(getPersonalDamage().get(BABA)));
-
         return stringBuilder.toString();
     }
 

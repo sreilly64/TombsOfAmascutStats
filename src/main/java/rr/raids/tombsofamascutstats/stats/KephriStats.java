@@ -21,7 +21,6 @@ public class KephriStats extends BossStats
     public KephriStats()
     {
         super();
-        initializePhaseCompletionTimesMap();
     }
 
     @Override

@@ -3,7 +3,6 @@ package rr.raids.tombsofamascutstats.stats;
 import lombok.Getter;
 import lombok.Setter;
 import rr.raids.tombsofamascutstats.stats.phases.AkkhaPhase;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -19,7 +18,6 @@ public class AkkhaStats extends BossStats
     public AkkhaStats()
     {
         super();
-        initializePhaseCompletionTimesMap();
     }
 
     @Override
