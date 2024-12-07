@@ -43,9 +43,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.Text;
 import org.apache.commons.lang3.StringUtils;
-import rr.raids.tombsofamascutstats.stats.KephriStats;
+import rr.raids.tombsofamascutstats.stats.*;
 import rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
-import rr.raids.tombsofamascutstats.stats.BabaStats;
 import rr.raids.tombsofamascutstats.stats.phases.KephriPhase;
 
 import javax.inject.Inject;
@@ -83,8 +82,20 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Inject
 	private ConfigManager configManager;
 
-	private static final DecimalFormat DMG_FORMAT = new DecimalFormat("#,##0");
-	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("##0.0");
+	public static final DecimalFormat DMG_FORMAT = new DecimalFormat("#,##0");
+	public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("##0.0");
+
+	public static final String BABA = "Ba-Ba";
+	public static final String KEPHRI = "Kephri";
+	public static final String SCARABS = "Scarabs";
+	public static final String AKKHA = "Akkha";
+	public static final String AKKHAS_SHADOW = "Akkha's Shadow";
+	public static final String ZEBAK = "Zebak";
+	public static final String OBELISK = "Obelisk";
+	public static final String TUMEKENS_WARDEN = "Tumeken's Warden";
+	public static final String ELIDINIS_WARDEN = "Elidinis' Warden";
+	public static final String CORE = "Core";
+	public static final String ENERGY_SIPHON = "Energy Siphon";
 
 	private static final int KEPHRI_SHIELDED_HEALING_HITSPLAT_ID = HitsplatID.CYAN_UP;
 	private static final int WARDENS_P2_DAMAGE_ME_HITSPLAT_ID = HitsplatID.DAMAGE_ME_POISE;
@@ -145,14 +156,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final Pattern WARDENS_P2_COMPLETE_ELIDINIS_SPAWNS = Pattern.compile("Tumeken's Warden uses the last of its power to restore Elidinis' Warden!");
 	private static final Pattern WARDENS_COMPLETE = Pattern.compile("Challenge complete: The Wardens\\.");
 
-	private static final Set<String> ENEMY_NAMES = ImmutableSet.of(
-			"Ba-Ba",
-			"Kephri", "Spitting Scarab", "Arcane Scarab", "Soldier Scarab",
-			"Akkha", "Akkha's Shadow",
-			"Zebak",
-			"Obelisk", "Tumeken's Warden", "Elidinis' Warden", "Core", "Energy Siphon"
-	);
-
 	private TombsOfAmascutStatsStatsInfoBox babaInfoBox;
 	private TombsOfAmascutStatsStatsInfoBox kephriInfoBox;
 	private TombsOfAmascutStatsStatsInfoBox akkhaInfoBox;
@@ -167,6 +170,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 	private final BabaStats babaStats = new BabaStats();
 	private final KephriStats kephriStats = new KephriStats();
+	private final AkkhaStats akkhaStats = new AkkhaStats();
+	private final ZebakStats zebakStats = new ZebakStats();
+	private final WardensStats wardensStats = new WardensStats();
+	private final Set<BossStats> bossStats = ImmutableSet.of(
+			babaStats, kephriStats, akkhaStats, zebakStats, wardensStats
+	);
 
 	private int akkhaStartTick = -1;
 	private int akkhasShadowOneStartTick;
@@ -243,12 +252,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		if (BABA_STARTED.matcher(strippedMessage).find())
 		{
-			resetBaba();
+			babaStats.resetStats();
 			babaStats.setStartTick(client.getTickCount());
 		}
 		else if (KEPHRI_STARTED.matcher(strippedMessage).find())
 		{
-			resetKephri();
+			kephriStats.resetStats();
 			kephriStats.setStartTick(client.getTickCount());
 		}
 		else if (AKKHA_STARTED.matcher(strippedMessage).find())
@@ -293,21 +302,17 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
-			double personalDamageDealt = this.personalDamage.getOrDefault("Ba-Ba", 0);
-			double totalDamageDealt = totalDamage.getOrDefault("Ba-Ba", 0);
-			double percentageOfBossDamageDealt = (personalDamageDealt / totalDamageDealt) * 100;
-			String damage = "</br>Damage Dealt:</br>Ba-Ba - " + DMG_FORMAT.format(personalDamageDealt);
-
 			if (config.chatboxDmg())
 			{
-				messages.add(getStatsChatMessage("Damage dealt to Ba-Ba - ", DMG_FORMAT.format(personalDamageDealt) + " (" + DECIMAL_FORMAT.format(percentageOfBossDamageDealt) + "%)"));
+				messages.add(getStatsChatMessage("Damage dealt to Ba-Ba - ", DMG_FORMAT.format(babaStats.getPersonalDamage().get(BABA)) + " (" + DECIMAL_FORMAT.format(babaStats.getPercentageOfDamageDealt(BABA)) + "%)"));
 			}
 
-			String splits = babaStats.getSplitTimes();
+			String damage = babaStats.getInfoBoxBossDamageString();
+			String splits = babaStats.getInfoBoxSplitTimesString();
 
-			babaInfoBox = createInfoBox(BABA_PET_ID, "Ba-Ba", babaStats.getPhaseCompletionTimes().get(BabaPhase.TOTAL), DECIMAL_FORMAT.format(percentageOfBossDamageDealt), damage, splits, "");
+			babaInfoBox = createInfoBox(BABA_PET_ID, BABA, babaStats.getPhaseCompletionTimes().get(BabaPhase.TOTAL), DECIMAL_FORMAT.format(babaStats.getPercentageOfDamageDealt(BABA)), damage, splits, "");
 			infoBoxManager.addInfoBox(babaInfoBox);
-			resetBaba();
+			babaStats.resetStats();
 		}
 		else if (KEPHRI_COMPLETE.matcher(strippedMessage).find())
 		{
@@ -333,53 +338,23 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
-			String damage = "</br>Damage Dealt:</br>";
-			double personalKephri = personalDamage.getOrDefault("Kephri", 0);
-			double totalKephri = totalDamage.getOrDefault("Kephri", 0);
-			double percentKephri = (personalKephri / totalKephri) * 100;
-
-			double personalScarab = personalDamage.getOrDefault("Scarabs", 0);
-			double totalScarab = totalDamage.getOrDefault("Scarabs", 0);
-			double percentScarab = (personalScarab / totalScarab) * 100;
-
-			double personalTotalDamage = personalKephri + personalScarab;
-			double totalDamage = totalKephri + totalScarab;
-			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
-
-			damage+= "Kephri - " + DMG_FORMAT.format(personalKephri) + " (" +DECIMAL_FORMAT.format(percentKephri) + "%)" + "</br>";
 			if (config.chatboxDmg())
 			{
 				messages.add(getStatsChatMessage("First down shield healed - ", DMG_FORMAT.format(kephriStats.getFirstShieldDownHealing())));
 				messages.add(getStatsChatMessage("Second down shield healed - ", DMG_FORMAT.format(kephriStats.getSecondShieldDownHealing())));
 				messages.add(getStatsChatMessage("Total shield healed - ", DMG_FORMAT.format(kephriStats.getShieldTotalHealing())));
-				messages.add(getStatsChatMessage("Damage dealt to Kephri - ", DMG_FORMAT.format(personalKephri) + " (" + DECIMAL_FORMAT.format(percentKephri) + "%)"));
+				messages.add(getStatsChatMessage("Damage dealt to Kephri - ", DMG_FORMAT.format(kephriStats.getPersonalDamage().get(KEPHRI)) + " (" + DECIMAL_FORMAT.format(kephriStats.getPercentageOfDamageDealt(KEPHRI)) + "%)"));
+				messages.add(getStatsChatMessage("Damage dealt to Scarabs - ", DMG_FORMAT.format(kephriStats.getPersonalDamage().get(SCARABS)) + " (" + DECIMAL_FORMAT.format(kephriStats.getPercentageOfDamageDealt(SCARABS)) + "%)"));
+				messages.add(getStatsChatMessage("Total damage dealt - ", DMG_FORMAT.format(kephriStats.getTotalPersonalDamageDealt()) + " (" + DECIMAL_FORMAT.format(kephriStats.getTotalPercentageOfDamageDealt()) + "%)"));
 			}
 
-			damage+= "Scarabs - " + DMG_FORMAT.format(personalScarab) + " (" +DECIMAL_FORMAT.format(percentScarab) + "%)" + "</br>";
-			if (config.chatboxDmg())
-			{
-				messages.add(getStatsChatMessage("Damage dealt to Scarabs - ", DMG_FORMAT.format(personalScarab) + " (" + DECIMAL_FORMAT.format(percentScarab) + "%)"));
-			}
+			String damage = kephriStats.getInfoBoxBossDamageString();
+			String splits = kephriStats.getInfoBoxSplitTimesString();
+			String healing = kephriStats.getInfoBoxHealingStatsString();
 
-			damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
-			if (config.chatboxDmg())
-			{
-				messages.add(getStatsChatMessage("Total damage dealt - ", DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)"));
-			}
-
-			String healing = "</br>Boss Healing:" +
-					"</br>" +
-					"First down healed - " + DMG_FORMAT.format(kephriStats.getFirstShieldDownHealing()) +
-					"</br>" +
-					"Second down healed - " + DMG_FORMAT.format(kephriStats.getSecondShieldDownHealing()) +
-					"</br>" +
-					"Total shield healed - " + DMG_FORMAT.format(kephriStats.getShieldTotalHealing());
-
-			String splits = kephriStats.getSplitTimes();
-
-			kephriInfoBox = createInfoBox(KEPHRI_PET_ID, "Kephri", kephriStats.getPhaseCompletionTimes().get(KephriPhase.TOTAL), DECIMAL_FORMAT.format(percentTotalDamage), damage, splits, healing);
+			kephriInfoBox = createInfoBox(KEPHRI_PET_ID, KEPHRI, kephriStats.getPhaseCompletionTimes().get(KephriPhase.TOTAL), DECIMAL_FORMAT.format(kephriStats.getTotalPercentageOfDamageDealt()), damage, splits, healing);
 			infoBoxManager.addInfoBox(kephriInfoBox);
-			resetKephri();
+			kephriStats.resetStats();
 		}
 		else if (AKKHA_COMPLETE.matcher(strippedMessage).find())
 		{
@@ -1020,28 +995,25 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 
 		NPC npc = event.getNpc();
-		int npcId = npc.getId();
 
-		switch (npcId)
+		if (npc.getId() == NpcID.AKKHAS_SHADOW)
 		{
-			case NpcID.AKKHAS_SHADOW:
-				if (akkhasShadowOneStartTick == 0)
-				{
-					akkhasShadowOneStartTick = client.getTickCount();
-				}
-				else if (akkhasShadowTwoStartTick == 0 && akkha80PercentStartTick > 0)
-				{
-					akkhasShadowTwoStartTick = client.getTickCount();
-				}
-				else if (akkhasShadowThreeStartTick == 0 && akkha60PercentStartTick > 0)
-				{
-					akkhasShadowThreeStartTick = client.getTickCount();
-				}
-				else if (akkhasShadowFourStartTick == 0 && akkha40PercentStartTick > 0)
-				{
-					akkhasShadowFourStartTick = client.getTickCount();
-				}
-				break;
+			if (akkhasShadowOneStartTick == 0)
+			{
+				akkhasShadowOneStartTick = client.getTickCount();
+			}
+			else if (akkhasShadowTwoStartTick == 0 && akkha80PercentStartTick > 0)
+			{
+				akkhasShadowTwoStartTick = client.getTickCount();
+			}
+			else if (akkhasShadowThreeStartTick == 0 && akkha60PercentStartTick > 0)
+			{
+				akkhasShadowThreeStartTick = client.getTickCount();
+			}
+			else if (akkhasShadowFourStartTick == 0 && akkha40PercentStartTick > 0)
+			{
+				akkhasShadowFourStartTick = client.getTickCount();
+			}
 		}
 	}
 
@@ -1054,28 +1026,25 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 
 		NPC npc = event.getNpc();
-		int npcId = npc.getId();
 
-		switch (npcId)
+		if (npc.getId() == NpcID.AKKHAS_SHADOW)
 		{
-			case NpcID.AKKHAS_SHADOW:
-				if (akkha80PercentStartTick == 0)
-				{
-					akkha80PercentStartTick = client.getTickCount();
-				}
-				else if (akkha60PercentStartTick == 0 && akkhasShadowTwoStartTick > 0)
-				{
-					akkha60PercentStartTick = client.getTickCount();
-				}
-				else if (akkha40PercentStartTick == 0 && akkhasShadowThreeStartTick > 0)
-				{
-					akkha40PercentStartTick = client.getTickCount();
-				}
-				else if (akkha20PercentStartTick == 0 && akkhasShadowFourStartTick > 0)
-				{
-					akkha20PercentStartTick = client.getTickCount();
-				}
-				break;
+			if (akkha80PercentStartTick == 0)
+			{
+				akkha80PercentStartTick = client.getTickCount();
+			}
+			else if (akkha60PercentStartTick == 0 && akkhasShadowTwoStartTick > 0)
+			{
+				akkha60PercentStartTick = client.getTickCount();
+			}
+			else if (akkha40PercentStartTick == 0 && akkhasShadowThreeStartTick > 0)
+			{
+				akkha40PercentStartTick = client.getTickCount();
+			}
+			else if (akkha20PercentStartTick == 0 && akkhasShadowFourStartTick > 0)
+			{
+				akkha20PercentStartTick = client.getTickCount();
+			}
 		}
 	}
 
@@ -1088,7 +1057,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 
 		boolean prevInstance = instanced;
-		instanced = client.isInInstancedRegion();
+		instanced = client.getLocalPlayer().getWorldView().isInstance();
 
 		if (prevInstance && !instanced) //going from raid into lobby
 		{
@@ -1123,14 +1092,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		NPC npc = (NPC) actor;
 		String npcName = Text.removeTags(npc.getName());
 
-		if (npcName == null || !(ENEMY_NAMES.contains(npcName)))
+		if (npcName == null)
 		{
 			return;
 		}
 
 		if (npcName.contains("Scarab"))
 		{
-			npcName = "Scarabs"; //group all damage to Scarab Overlords under one name
+			npcName = SCARABS; //group all damage to Scarab Overlords under one name
 		}
 
 		Hitsplat hitsplat = event.getHitsplat();
@@ -1148,12 +1117,30 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			totalDmg += hitsplat.getAmount();
 			personalDamage.put(npcName, myDmg);
 			totalDamage.put(npcName, totalDmg);
+			//TODO remove above lines
+
+			for (BossStats bossStats: bossStats)
+			{
+				if (bossStats.getEnemyNames().contains(npcName))
+				{
+					bossStats.addToPersonalDamage(npcName, hitsplat.getAmount());
+				}
+			}
 		}
 		else if (hitsplat.isOthers())
 		{
 			int totalDmg = totalDamage.getOrDefault(npcName, 0);
 			totalDmg += hitsplat.getAmount();
 			totalDamage.put(npcName, totalDmg);
+			//TODO remove above lines
+
+			for (BossStats bossStats: bossStats)
+			{
+				if (bossStats.getEnemyNames().contains(npcName))
+				{
+					bossStats.addToTotalDamage(npcName, hitsplat.getAmount());
+				}
+			}
 
 			if (isAWarden(npcName) && (wardensP3StartTick > -1) && energySiphonsWhereKilled)
 			{
@@ -1181,7 +1168,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				wardensP4EnrageHeal = true;
 			}
 		}
-		else if (hitsplat.getHitsplatType() == KEPHRI_SHIELDED_HEALING_HITSPLAT_ID && npcName.equals("Kephri")) //Hitsplat ID is shared with Palm of Resourcefulness
+		else if (hitsplat.getHitsplatType() == KEPHRI_SHIELDED_HEALING_HITSPLAT_ID && npcName.equals(KEPHRI)) //Hitsplat ID is shared with Palm of Resourcefulness
 		{
 			kephriStats.addToKephriShieldTotalHealing(hitsplat.getAmount());
 		}
@@ -1220,11 +1207,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			return false;
 		}
-		else
-		{
-			return npcName.equalsIgnoreCase("Elidinis' Warden") || npcName.equalsIgnoreCase("Tumeken's Warden");
-		}
-
+		return npcName.equalsIgnoreCase("Elidinis' Warden") || npcName.equalsIgnoreCase("Tumeken's Warden");
 	}
 
 	private boolean isWardensP2Hitsplat(Hitsplat hitsplat) {
@@ -1267,22 +1250,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				.append(key)
 				.append(Color.RED, value)
 				.build();
-	}
-
-	private void resetBaba()
-	{
-		babaStats.resetStats();
-		personalDamage.remove("Ba-Ba");
-		totalDamage.remove("Ba-Ba");
-	}
-
-	private void resetKephri()
-	{
-		kephriStats.resetStats();
-		personalDamage.remove("Kephri");
-		totalDamage.remove("Kephri");
-		personalDamage.remove("Scarabs");
-		totalDamage.remove("Scarabs");
 	}
 
 	private void resetAkkha()
@@ -1349,8 +1316,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 	private void resetAll()
 	{
-		resetBaba();
-		resetKephri();
+		babaStats.resetStats();
+		kephriStats.resetStats();
 		resetAkkha();
 		resetZebak();
 		resetObelisk();
