@@ -47,8 +47,6 @@ import rr.raids.tombsofamascutstats.stats.*;
 import rr.raids.tombsofamascutstats.stats.phases.AkkhaPhase;
 import rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
 import rr.raids.tombsofamascutstats.stats.phases.KephriPhase;
-import rr.raids.tombsofamascutstats.stats.phases.ZebakPhase;
-
 import javax.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -179,7 +177,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			babaStats, kephriStats, akkhaStats, zebakStats, obeliskStats
 	);
 
-	private int obeliskStartTick = -1;
 	private int wardensP2StartTick = -1;
 	private int wardensP3StartTick = -1;
 	private boolean foughtElidinisWardenInP3;
@@ -261,11 +258,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (WARDENS_STARTED.matcher(strippedMessage).find())
 		{
-			resetObelisk();
+			obeliskStats.resetStats();
 			resetWardensP2();
 			resetWardensP3();
 			resetWardensInfoBoxes();
-			obeliskStartTick = client.getTickCount();
+			obeliskStats.setStartTick(client.getTickCount());
 		}
 		else if (BABA_COMPLETE.matcher(strippedMessage).find())
 		{
@@ -410,37 +407,28 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (OBELISK_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find() || OBELISK_COMPLETE_ELIDINIS_SPAWNS.matcher(strippedMessage).find())
 		{
-			double personal = personalDamage.getOrDefault("Obelisk", 0);
-			double total = totalDamage.getOrDefault("Obelisk", 0);
-			double percent = (personal / total) * 100;
-			int roomTicks;
-			String roomCompletionTime = "";
-			String damage = "</br>Damage Dealt:</br>";
+			if (obeliskStats.getStartTick() < 0)
+			{
+				return;
+			}
+
 			messages.clear();
 
-			if (obeliskStartTick > 0)
+			//calculate final phase time and total kill time
+			int currentTick = client.getTickCount();
+			obeliskStats.setTotalCompletionTime(formatTime(currentTick - obeliskStats.getStartTick()));
+
+			if (config.chatboxDmg())
 			{
-				roomTicks = client.getTickCount() - obeliskStartTick;
-				roomCompletionTime = formatTime(roomTicks);
+				messages.add(getStatsChatMessage("Damage dealt to Obelisk - ", DMG_FORMAT.format(obeliskStats.getPersonalDamage().get(OBELISK)) + " (" + DECIMAL_FORMAT.format(obeliskStats.getPercentageOfDamageDealt(OBELISK)) + "%)"));
 			}
 
-			if (personal > 0)
-			{
-				damage += "Obelisk - " + DMG_FORMAT.format(personal);
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Damage dealt to Obelisk - ")
-									.append(Color.RED, DMG_FORMAT.format(personal) + " (" + DECIMAL_FORMAT.format(percent) + "%)")
-									.build()
-					);
-				}
-			}
-			obeliskInfoBox = createInfoBox(OBELISK_ICON_ID, "Obelisk", roomCompletionTime, DECIMAL_FORMAT.format(percent), damage, "Kill Time - " + roomCompletionTime, "");
+			String damage = obeliskStats.getInfoBoxBossDamageString();
+			String splits = obeliskStats.getInfoBoxSplitTimesString();
+
+			obeliskInfoBox = createInfoBox(OBELISK_ICON_ID, OBELISK, obeliskStats.getTotalCompletionTime(), DECIMAL_FORMAT.format(obeliskStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
 			infoBoxManager.addInfoBox(obeliskInfoBox);
-			resetObelisk();
+			obeliskStats.resetStats();
 			wardensP2StartTick = client.getTickCount();
 		}
 		else if (WARDENS_P2_COMPLETE_ELIDINIS_SPAWNS.matcher(strippedMessage).find())
@@ -667,7 +655,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
-			if (energySiphonBossDamage > 0) {
+			if (energySiphonBossDamage > 0)
+			{
 				double percentEnergySiphonDamage = (energySiphonBossDamage / totalDamage) * 100;
 				damage += "Energy Siphon damage - " + DMG_FORMAT.format(energySiphonBossDamage) + " (" + DECIMAL_FORMAT.format(percentEnergySiphonDamage) + "%)" + "</br>";
 				if (config.chatboxDmg())
@@ -1000,9 +989,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onProjectileMoved(ProjectileMoved event) {
+	public void onProjectileMoved(ProjectileMoved event)
+	{
 		if (event.getProjectile().getId() == 2226) //ID 2226 is that of the energy siphons (red skulls) as they fly to or from the Warden in P3
 		{
+			log.info("energy siphon projectile event position: {}", event.getPosition().toString());
 			if (areLocalPointsEqual(event.getPosition(), lastEnergySiphonPosition))
 			{
 				if (!energySiphonsWhereKilled)
@@ -1020,14 +1011,13 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			return false;
 		}
-		else {
-			return localPointOne.getX() == localPointTwo.getX() &&
-					localPointOne.getY() == localPointTwo.getY() &&
-					localPointOne.getWorldView() == localPointTwo.getWorldView();
-		}
+		return localPointOne.getX() == localPointTwo.getX() &&
+				localPointOne.getY() == localPointTwo.getY() &&
+				localPointOne.getWorldView() == localPointTwo.getWorldView();
 	}
 
-	private boolean isAWarden(String npcName) {
+	private boolean isAWarden(String npcName)
+	{
 		if (npcName == null)
 		{
 			return false;
@@ -1035,7 +1025,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		return npcName.equalsIgnoreCase("Elidinis' Warden") || npcName.equalsIgnoreCase("Tumeken's Warden");
 	}
 
-	private boolean isWardensP2Hitsplat(Hitsplat hitsplat) {
+	private boolean isWardensP2Hitsplat(Hitsplat hitsplat)
+	{
 		int hitSplatId = hitsplat.getHitsplatType();
 		return hitSplatId == WARDENS_P2_DAMAGE_ME_HITSPLAT_ID
 				|| hitSplatId == WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID
@@ -1077,13 +1068,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				.build();
 	}
 
-	private void resetObelisk()
-	{
-		obeliskStartTick = -1;
-		personalDamage.remove("Obelisk");
-		totalDamage.remove("Obelisk");
-	}
-
 	private void resetWardensP2()
 	{
 		wardensP2StartTick = -1;
@@ -1120,7 +1104,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		kephriStats.resetStats();
 		akkhaStats.resetStats();
 		zebakStats.resetStats();
-		resetObelisk();
+		obeliskStats.resetStats();
 		resetWardensP2();
 		resetWardensP3();
 	}
