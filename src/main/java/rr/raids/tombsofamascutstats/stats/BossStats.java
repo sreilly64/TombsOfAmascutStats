@@ -19,9 +19,26 @@ public abstract class BossStats
     private final Map<String, Integer> personalDamage = new HashMap<>(); // key = enemy name, value = damage dealt to the enemy by the player
     private final Map<String, Integer> totalDamage = new HashMap<>(); // key = enemy name, value = total damage dealt to the enemy
 
+    abstract void initializeSetOfEnemyNames();
+    abstract void initializePhaseCompletionTimesMap();
     public abstract void resetStats();
     public abstract String getInfoBoxSplitTimesString();
     public abstract String getInfoBoxBossDamageString();
+
+    public BossStats()
+    {
+        initializeSetOfEnemyNames();
+        initializeBossDamageMaps();
+    }
+
+    void initializeBossDamageMaps()
+    {
+        for (String enemyName: getEnemyNames())
+        {
+            getPersonalDamage().put(enemyName, 0);
+            getTotalDamage().put(enemyName, 0);
+        }
+    }
 
     public void addToPersonalDamage(String enemyName, int damageAmount)
     {

@@ -1,6 +1,6 @@
 package rr.raids.tombsofamascutstats.stats;
 
-public class ZebakStats extends BossStats
+public class ObeliskStats extends BossStats
 {
 
     @Override

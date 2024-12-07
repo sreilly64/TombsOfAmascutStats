@@ -18,26 +18,16 @@ public class BabaStats extends BossStats
 
     public BabaStats()
     {
+        super();
         initializePhaseCompletionTimesMap();
-        initializeSetOfEnemyNames();
-        initializeBossDamageMaps();
     }
 
-    private void initializeBossDamageMaps()
-    {
-        for (String enemyName: getEnemyNames())
-        {
-            getPersonalDamage().put(enemyName, 0);
-            getTotalDamage().put(enemyName, 0);
-        }
-    }
-
-    private void initializeSetOfEnemyNames()
+    void initializeSetOfEnemyNames()
     {
         getEnemyNames().add(BABA);
     }
 
-    private void initializePhaseCompletionTimesMap()
+    void initializePhaseCompletionTimesMap()
     {
         for (BabaPhase phase: BabaPhase.values())
         {

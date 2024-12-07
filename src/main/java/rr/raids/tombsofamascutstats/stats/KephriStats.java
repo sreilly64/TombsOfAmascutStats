@@ -20,27 +20,19 @@ public class KephriStats extends BossStats
 
     public KephriStats()
     {
-        initializeSetOfEnemyNames();
+        super();
         initializePhaseCompletionTimesMap();
-        initializeBossDamageMaps();
     }
 
-    private void initializeBossDamageMaps()
-    {
-        for (String enemyName: getEnemyNames())
-        {
-            getPersonalDamage().put(enemyName, 0);
-            getTotalDamage().put(enemyName, 0);
-        }
-    }
-
-    private void initializeSetOfEnemyNames()
+    @Override
+    void initializeSetOfEnemyNames()
     {
         getEnemyNames().add(KEPHRI);
         getEnemyNames().add(SCARABS);
     }
 
-    private void initializePhaseCompletionTimesMap()
+    @Override
+    void initializePhaseCompletionTimesMap()
     {
         for (KephriPhase phase: KephriPhase.values())
         {
@@ -59,7 +51,8 @@ public class KephriStats extends BossStats
     }
 
     @Override
-    public void resetStats() {
+    public void resetStats()
+    {
         setStartTick(-1);
         setPreviousPhaseEndTick(-1);
         isFirstShieldDown = true;
@@ -70,7 +63,8 @@ public class KephriStats extends BossStats
     }
 
     @Override
-    public String getInfoBoxSplitTimesString() {
+    public String getInfoBoxSplitTimesString()
+    {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Times:</br>");
         for (Map.Entry<KephriPhase, String> entry: phaseCompletionTimes.entrySet())
@@ -84,7 +78,8 @@ public class KephriStats extends BossStats
     }
 
     @Override
-    public String getInfoBoxBossDamageString() {
+    public String getInfoBoxBossDamageString()
+    {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("</br>Damage Dealt:")
                 .append("</br>Kephri - ")
