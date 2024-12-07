@@ -28,7 +28,7 @@ public class AkkhaStats extends BossStats
     }
 
     @Override
-    void initializePhaseCompletionTimesMap()
+    void initializePhaseCompletionTimes()
     {
         for (AkkhaPhase phase: AkkhaPhase.values())
         {
@@ -41,7 +41,7 @@ public class AkkhaStats extends BossStats
     {
         setStartTick(-1);
         setPreviousPhaseEndTick(-1);
-        initializePhaseCompletionTimesMap();
+        initializePhaseCompletionTimes();
         initializeBossDamageMaps();
     }
 

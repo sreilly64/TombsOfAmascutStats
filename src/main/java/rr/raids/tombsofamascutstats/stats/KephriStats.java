@@ -31,7 +31,7 @@ public class KephriStats extends BossStats
     }
 
     @Override
-    void initializePhaseCompletionTimesMap()
+    void initializePhaseCompletionTimes()
     {
         for (KephriPhase phase: KephriPhase.values())
         {
@@ -57,7 +57,7 @@ public class KephriStats extends BossStats
         isFirstShieldDown = true;
         firstShieldDownHealing = 0;
         shieldTotalHealing = 0;
-        initializePhaseCompletionTimesMap();
+        initializePhaseCompletionTimes();
         initializeBossDamageMaps();
     }
 

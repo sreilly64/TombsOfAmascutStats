@@ -20,7 +20,7 @@ public abstract class BossStats
     private final Map<String, Integer> totalDamage = new HashMap<>(); // key = enemy name, value = total damage dealt to the enemy
 
     abstract void initializeSetOfEnemyNames();
-    abstract void initializePhaseCompletionTimesMap();
+    abstract void initializePhaseCompletionTimes();
     public abstract void resetStats();
     public abstract String getInfoBoxSplitTimesString();
     public abstract String getInfoBoxBossDamageString();
@@ -29,7 +29,7 @@ public abstract class BossStats
     {
         initializeSetOfEnemyNames();
         initializeBossDamageMaps();
-        initializePhaseCompletionTimesMap();
+        initializePhaseCompletionTimes();
     }
 
     void initializeBossDamageMaps()

@@ -394,7 +394,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 			//calculate final phase time and total kill time
 			int currentTick = client.getTickCount();
-			zebakStats.getPhaseCompletionTimes().put(ZebakPhase.TOTAL, formatTime(currentTick - zebakStats.getStartTick()));
+			zebakStats.setTotalCompletionTime(formatTime(currentTick - zebakStats.getStartTick()));
 
 			if (config.chatboxDmg())
 			{
@@ -404,7 +404,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			String damage = zebakStats.getInfoBoxBossDamageString();
 			String splits = zebakStats.getInfoBoxSplitTimesString();
 
-			zebakInfoBox = createInfoBox(ZEBAK_PET_ID, ZEBAK, zebakStats.getPhaseCompletionTimes().get(ZebakPhase.TOTAL), DECIMAL_FORMAT.format(zebakStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
+			zebakInfoBox = createInfoBox(ZEBAK_PET_ID, ZEBAK, zebakStats.getTotalCompletionTime(), DECIMAL_FORMAT.format(zebakStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
 			infoBoxManager.addInfoBox(zebakInfoBox);
 			zebakStats.resetStats();
 		}
@@ -1119,7 +1119,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		babaStats.resetStats();
 		kephriStats.resetStats();
 		akkhaStats.resetStats();
-		resetZebak();
+		zebakStats.resetStats();
 		resetObelisk();
 		resetWardensP2();
 		resetWardensP3();

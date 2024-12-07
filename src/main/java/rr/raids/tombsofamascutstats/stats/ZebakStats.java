@@ -2,9 +2,6 @@ package rr.raids.tombsofamascutstats.stats;
 
 import lombok.Getter;
 import lombok.Setter;
-import rr.raids.tombsofamascutstats.stats.phases.ZebakPhase;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.*;
 
@@ -13,7 +10,7 @@ import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.*;
 public class ZebakStats extends BossStats
 {
 
-    private Map<ZebakPhase, String> phaseCompletionTimes = new LinkedHashMap<>(); // key = phase name, value = phase completion time
+    private String totalCompletionTime;
 
     public ZebakStats()
     {
@@ -27,12 +24,9 @@ public class ZebakStats extends BossStats
     }
 
     @Override
-    void initializePhaseCompletionTimesMap()
+    void initializePhaseCompletionTimes()
     {
-        for (ZebakPhase phase: ZebakPhase.values())
-        {
-            phaseCompletionTimes.put(phase, null);
-        }
+        totalCompletionTime = null;
     }
 
     @Override
@@ -40,7 +34,7 @@ public class ZebakStats extends BossStats
     {
         setStartTick(-1);
         setPreviousPhaseEndTick(-1);
-        initializePhaseCompletionTimesMap();
+        initializePhaseCompletionTimes();
         initializeBossDamageMaps();
     }
 
@@ -48,14 +42,9 @@ public class ZebakStats extends BossStats
     public String getInfoBoxSplitTimesString()
     {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Times:</br>");
-        for (Map.Entry<ZebakPhase, String> entry: phaseCompletionTimes.entrySet())
-        {
-            String phaseName = entry.getKey().phaseName;
-            String phaseTime = entry.getValue();
-            stringBuilder.append(phaseName).append(phaseTime).append("</br>");
-        }
-        stringBuilder.delete(stringBuilder.lastIndexOf("</br>"), stringBuilder.length());
+        stringBuilder.append("Times:</br>")
+                .append("Total - ")
+                .append(totalCompletionTime);
         return stringBuilder.toString();
     }
 

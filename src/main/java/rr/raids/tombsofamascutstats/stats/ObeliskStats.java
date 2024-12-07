@@ -10,7 +10,7 @@ public class ObeliskStats extends BossStats
     }
 
     @Override
-    void initializePhaseCompletionTimesMap()
+    void initializePhaseCompletionTimes()
     {
 
     }

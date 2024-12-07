@@ -26,7 +26,7 @@ public class BabaStats extends BossStats
         getEnemyNames().add(BABA);
     }
 
-    void initializePhaseCompletionTimesMap()
+    void initializePhaseCompletionTimes()
     {
         for (BabaPhase phase: BabaPhase.values())
         {
@@ -39,7 +39,7 @@ public class BabaStats extends BossStats
     {
         setStartTick(-1);
         setPreviousPhaseEndTick(-1);
-        initializePhaseCompletionTimesMap();
+        initializePhaseCompletionTimes();
         initializeBossDamageMaps();
     }
 
