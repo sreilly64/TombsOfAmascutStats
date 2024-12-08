@@ -92,9 +92,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	public static final String AKKHAS_SHADOW = "Akkha's Shadow";
 	public static final String ZEBAK = "Zebak";
 	public static final String OBELISK = "Obelisk";
+	public static final String TUMEKENS_WARDEN_SHIELDED = "Tumeken's Warden Shielded";
+	public static final String ELIDINIS_WARDEN_SHIELDED = "Elidinis' Warden Shielded";
+	public static final String CORE = "Core";
 	public static final String TUMEKENS_WARDEN = "Tumeken's Warden";
 	public static final String ELIDINIS_WARDEN = "Elidinis' Warden";
-	public static final String CORE = "Core";
 	public static final String ENERGY_SIPHON = "Energy Siphon";
 
 	private static final int KEPHRI_SHIELDED_HEALING_HITSPLAT_ID = HitsplatID.CYAN_UP;
@@ -173,13 +175,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private final AkkhaStats akkhaStats = new AkkhaStats();
 	private final ZebakStats zebakStats = new ZebakStats();
 	private final ObeliskStats obeliskStats = new ObeliskStats();
+	private final FirstWardensStats firstWardensStats = new FirstWardensStats();
 	private final Set<BossStats> bossStats = ImmutableSet.of(
-			babaStats, kephriStats, akkhaStats, zebakStats, obeliskStats
+			babaStats, kephriStats, akkhaStats, zebakStats, obeliskStats, firstWardensStats
 	);
 
-	private int wardensP2StartTick = -1;
 	private int wardensP3StartTick = -1;
-	private boolean foughtElidinisWardenInP3;
 	private boolean wardensP4EnrageHeal = false;
 	private int wardensP3CompletionTime;
 	private boolean energySiphonsWhereKilled = false;
@@ -259,7 +260,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		else if (WARDENS_STARTED.matcher(strippedMessage).find())
 		{
 			obeliskStats.resetStats();
-			resetWardensP2();
+			firstWardensStats.resetStats();
 			resetWardensP3();
 			resetWardensInfoBoxes();
 			obeliskStats.setStartTick(client.getTickCount());
@@ -429,158 +430,42 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			obeliskInfoBox = createInfoBox(OBELISK_ICON_ID, OBELISK, obeliskStats.getTotalCompletionTime(), DECIMAL_FORMAT.format(obeliskStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
 			infoBoxManager.addInfoBox(obeliskInfoBox);
 			obeliskStats.resetStats();
-			wardensP2StartTick = client.getTickCount();
+
+			firstWardensStats.setStartTick(client.getTickCount());
 		}
-		else if (WARDENS_P2_COMPLETE_ELIDINIS_SPAWNS.matcher(strippedMessage).find())
+		else if (WARDENS_P2_COMPLETE_ELIDINIS_SPAWNS.matcher(strippedMessage).find() || WARDENS_P2_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find())
 		{
-			double personalCoreDamage = personalDamage.getOrDefault("Core", 0);
-			double totalCoreDamage = totalDamage.getOrDefault("Core", 0);
-			double percentCoreDamage = (personalCoreDamage / totalCoreDamage) * 100;
+			if (firstWardensStats.getStartTick() < 0)
+			{
+				return;
+			}
 
-			double personalShieldDamage = personalDamage.getOrDefault("Tumeken's Warden Shielded", 0);
-			double totalShieldDamage = totalDamage.getOrDefault("Tumeken's Warden Shielded", 0);
-			double percentShieldDamage = (personalShieldDamage / totalShieldDamage) * 100;
-
-			double personalTotalDamage = personalCoreDamage + personalShieldDamage;
-			double totalDamage = totalCoreDamage + totalShieldDamage;
-			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
-
-			int roomTicks;
-			String roomCompletionTime = "";
-			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
-			if (wardensP2StartTick > 0)
+			//calculate final phase time and total kill time
+			int currentTick = client.getTickCount();
+			firstWardensStats.setTotalCompletionTime(formatTime(currentTick - firstWardensStats.getStartTick()));
+			//set flag that denotes which Warden was fought first
+			firstWardensStats.setElidnisWardenFought(WARDENS_P2_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find());
+
+			String wardensName = firstWardensStats.isElidnisWardenFought() ? ELIDINIS_WARDEN : TUMEKENS_WARDEN;
+			String shieldedWardensName = wardensName.equals(ELIDINIS_WARDEN) ? ELIDINIS_WARDEN_SHIELDED : TUMEKENS_WARDEN_SHIELDED;
+
+			if (config.chatboxDmg())
 			{
-				roomTicks = client.getTickCount() - wardensP2StartTick;
-				roomCompletionTime = formatTime(roomTicks);
+				messages.add(getStatsChatMessage("Damage dealt to "+wardensName+" - ", DMG_FORMAT.format(firstWardensStats.getPersonalDamage().get(shieldedWardensName)) + " (" + DECIMAL_FORMAT.format(firstWardensStats.getPercentageOfDamageDealt(shieldedWardensName)) + "%)"));
+				messages.add(getStatsChatMessage("Damage dealt to Core - ", DMG_FORMAT.format(firstWardensStats.getPersonalDamage().get(CORE)) + " (" + DECIMAL_FORMAT.format(firstWardensStats.getPercentageOfDamageDealt(CORE)) + "%)"));
+				messages.add(getStatsChatMessage("Total damage dealt - ", DMG_FORMAT.format(firstWardensStats.getTotalPersonalDamageDealt()) + " (" + DECIMAL_FORMAT.format(firstWardensStats.getTotalPercentageOfDamageDealt()) + "%)"));
 			}
 
-			if (personalShieldDamage > 0)
-			{
-				damage += "Tumeken's Warden - " + DMG_FORMAT.format(personalShieldDamage) + " (" + DECIMAL_FORMAT.format(percentShieldDamage) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Damage dealt to Tumeken's Warden - ")
-									.append(Color.RED, DMG_FORMAT.format(personalShieldDamage) + " (" + DECIMAL_FORMAT.format(percentShieldDamage) + "%)")
-									.build()
-					);
-				}
-			}
+			String damage = firstWardensStats.getInfoBoxBossDamageString();
+			String splits = firstWardensStats.getInfoBoxSplitTimesString();
 
-			if (personalCoreDamage > 0)
-			{
-				damage += "Core - " + DMG_FORMAT.format(personalCoreDamage) + " (" + DECIMAL_FORMAT.format(percentCoreDamage) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Damage dealt to Core - ")
-									.append(Color.RED, DMG_FORMAT.format(personalCoreDamage) + " (" + DECIMAL_FORMAT.format(percentCoreDamage) + "%)")
-									.build()
-					);
-				}
-			}
-
-			if (personalTotalDamage > 0)
-			{
-				damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Total damage dealt - ")
-									.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)")
-									.build()
-					);
-				}
-			}
-
-			wardensP2InfoBox = createInfoBox(TUMEKENS_WARDEN_PET_ID, "P2 Tumeken's Warden", roomCompletionTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomCompletionTime, "");
+			wardensP2InfoBox = createInfoBox(TUMEKENS_WARDEN_PET_ID, wardensName, firstWardensStats.getTotalCompletionTime(), DECIMAL_FORMAT.format(firstWardensStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
 			infoBoxManager.addInfoBox(wardensP2InfoBox);
-			resetWardensP2();
+			firstWardensStats.resetStats();
+
 			wardensP3StartTick = client.getTickCount();
-			foughtElidinisWardenInP3 = true;
-		}
-		else if (WARDENS_P2_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find())
-		{
-			double personalCoreDamage = personalDamage.getOrDefault("Core", 0);
-			double totalCoreDamage = totalDamage.getOrDefault("Core", 0);
-			double percentCoreDamage = (personalCoreDamage / totalCoreDamage) * 100;
-
-			double personalShieldDamage = personalDamage.getOrDefault("Elidinis' Warden Shielded", 0);
-			double totalShieldDamage = totalDamage.getOrDefault("Elidinis' Warden Shielded", 0);
-			double percentShieldDamage = (personalShieldDamage / totalShieldDamage) * 100;
-
-			double personalTotalDamage = personalCoreDamage + personalShieldDamage;
-			double totalDamage = totalCoreDamage + totalShieldDamage;
-			double percentTotalDamage = (personalTotalDamage / totalDamage) * 100;
-
-			int roomTicks;
-			String roomCompletionTime = "";
-			String damage = "</br>Damage Dealt:</br>";
-			messages.clear();
-
-			if (wardensP2StartTick > 0)
-			{
-				roomTicks = client.getTickCount() - wardensP2StartTick;
-				roomCompletionTime = formatTime(roomTicks);
-			}
-
-			if (personalShieldDamage > 0)
-			{
-				damage += "Elidinis' Warden - " + DMG_FORMAT.format(personalShieldDamage) + " (" + DECIMAL_FORMAT.format(percentShieldDamage) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Damage dealt to Elidinis' Warden - ")
-									.append(Color.RED, DMG_FORMAT.format(personalShieldDamage) + " (" + DECIMAL_FORMAT.format(percentShieldDamage) + "%)")
-									.build()
-					);
-				}
-			}
-
-			if (personalCoreDamage > 0)
-			{
-				damage += "Core - " + DMG_FORMAT.format(personalCoreDamage) + " (" + DECIMAL_FORMAT.format(percentCoreDamage) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Damage dealt to Core - ")
-									.append(Color.RED, DMG_FORMAT.format(personalCoreDamage) + " (" + DECIMAL_FORMAT.format(percentCoreDamage) + "%)")
-									.build()
-					);
-				}
-			}
-
-			if (personalTotalDamage > 0)
-			{
-				damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Total damage dealt - ")
-									.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(percentTotalDamage) + "%)")
-									.build()
-					);
-				}
-			}
-			wardensP2InfoBox = createInfoBox(ELIDNIS_WARDEN_PET_ID, "P2 Elidinis' Warden", roomCompletionTime, DECIMAL_FORMAT.format(percentTotalDamage), damage, "Kill Time - " + roomCompletionTime, "");
-			infoBoxManager.addInfoBox(wardensP2InfoBox);
-			resetWardensP2();
-			wardensP3StartTick = client.getTickCount();
-			foughtElidinisWardenInP3 = false;
 		}
 		else if (WARDENS_COMPLETE.matcher(strippedMessage).find())
 		{
@@ -589,7 +474,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			int infoBoxIconId;
 			String bossName;
 
-			if (foughtElidinisWardenInP3)
+			if (firstWardensStats.isElidnisWardenFought())
 			{
 				personalTotalDamage = personalDamage.getOrDefault("Elidinis' Warden", 0);
 				totalDamage = this.totalDamage.getOrDefault("Elidinis' Warden", 0);
@@ -969,6 +854,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			healed += hitsplat.getAmount();
 			totalHealing.put(npcName, healed);
 
+			//TODO remove above lines
 			if (isAWarden(npcName))
 			{
 				if (wardensP4EnrageHeal) //the Wardens heal twice, once at the very start of Phase 3 and once when they enter enrage phase/phase 4
@@ -1068,21 +954,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				.build();
 	}
 
-	private void resetWardensP2()
-	{
-		wardensP2StartTick = -1;
-		personalDamage.remove("Elidinis' Warden");
-		totalDamage.remove("Elidinis' Warden");
-		personalDamage.remove("Tumeken's Warden");
-		totalDamage.remove("Tumeken's Warden");
-		personalDamage.remove("Elidinis' Warden Shielded");
-		totalDamage.remove("Elidinis' Warden Shielded");
-		personalDamage.remove("Tumeken's Warden Shielded");
-		totalDamage.remove("Tumeken's Warden Shielded");
-		personalDamage.remove("Core");
-		totalDamage.remove("Core");
-	}
-
 	private void resetWardensP3()
 	{
 		wardensP3StartTick = -1;
@@ -1105,7 +976,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		akkhaStats.resetStats();
 		zebakStats.resetStats();
 		obeliskStats.resetStats();
-		resetWardensP2();
+		firstWardensStats.resetStats();
 		resetWardensP3();
 	}
 
