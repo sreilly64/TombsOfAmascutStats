@@ -2,7 +2,6 @@ package rr.raids.tombsofamascutstats.stats.phases;
 
 public enum BabaPhase
 {
-
     PHASE_1("Phase 1 - "),
     BOULDERS_1("Boulders 1 - "),
     PHASE_2("Phase 2 - "),

@@ -23,6 +23,29 @@ public class KephriStats extends BossStats
         super();
     }
 
+    public void addToKephriShieldTotalHealing(int amount)
+    {
+        shieldTotalHealing += amount;
+    }
+
+    public int getSecondShieldDownHealing()
+    {
+        return shieldTotalHealing - firstShieldDownHealing;
+    }
+
+    public String getInfoBoxHealingStatsString()
+    {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("</br>Boss Healing:")
+                .append("</br>First down healed - ")
+                .append(DMG_FORMAT.format(firstShieldDownHealing))
+                .append("</br>Second down healed - ")
+                .append(DMG_FORMAT.format(getSecondShieldDownHealing()))
+                .append("</br>Total shield healed - ")
+                .append(DMG_FORMAT.format(shieldTotalHealing));
+        return stringBuilder.toString();
+    }
+
     @Override
     void initializeSetOfEnemyNames()
     {
@@ -39,26 +62,16 @@ public class KephriStats extends BossStats
         }
     }
 
-    public void addToKephriShieldTotalHealing(int amount)
-    {
-        shieldTotalHealing += amount;
-    }
-
-    public int getSecondShieldDownHealing()
-    {
-        return shieldTotalHealing - firstShieldDownHealing;
-    }
-
     @Override
     public void resetStats()
     {
         setStartTick(-1);
         setPreviousPhaseEndTick(-1);
+        initializePhaseCompletionTimes();
+        initializeBossDamageMaps();
         isFirstShieldDown = true;
         firstShieldDownHealing = 0;
         shieldTotalHealing = 0;
-        initializePhaseCompletionTimes();
-        initializeBossDamageMaps();
     }
 
     @Override
@@ -88,19 +101,6 @@ public class KephriStats extends BossStats
                 .append(DMG_FORMAT.format(getPersonalDamage().get(SCARABS))).append(" (").append(DECIMAL_FORMAT.format(getPercentageOfDamageDealt(SCARABS))).append("%)")
                 .append("</br>Total Damage - ")
                 .append(DMG_FORMAT.format(getTotalPersonalDamageDealt()));
-        return stringBuilder.toString();
-    }
-
-    public String getInfoBoxHealingStatsString()
-    {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("</br>Boss Healing:")
-                .append("</br>First down healed - ")
-                .append(DMG_FORMAT.format(firstShieldDownHealing))
-                .append("</br>Second down healed - ")
-                .append(DMG_FORMAT.format(getSecondShieldDownHealing()))
-                .append("</br>Total shield healed - ")
-                .append(DMG_FORMAT.format(shieldTotalHealing));
         return stringBuilder.toString();
     }
 }

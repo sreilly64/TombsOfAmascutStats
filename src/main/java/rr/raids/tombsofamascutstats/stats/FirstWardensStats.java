@@ -64,7 +64,8 @@ public class FirstWardensStats extends BossStats
                 .append(DMG_FORMAT.format(getPersonalDamage().get(shieldedWardensName)))
                 .append(" (").append(DECIMAL_FORMAT.format(getPercentageOfDamageDealt(shieldedWardensName))).append("%)")
                 .append("</br>Core - ")
-                .append(DMG_FORMAT.format(getPersonalDamage().get(CORE))).append(" (").append(DECIMAL_FORMAT.format(getPercentageOfDamageDealt(CORE))).append("%)")
+                .append(DMG_FORMAT.format(getPersonalDamage().get(CORE)))
+                .append(" (").append(DECIMAL_FORMAT.format(getPercentageOfDamageDealt(CORE))).append("%)")
                 .append("</br>Total Damage - ")
                 .append(DMG_FORMAT.format(getTotalPersonalDamageDealt()));
         return stringBuilder.toString();

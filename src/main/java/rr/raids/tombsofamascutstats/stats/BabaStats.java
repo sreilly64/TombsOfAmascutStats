@@ -21,11 +21,13 @@ public class BabaStats extends BossStats
         super();
     }
 
+    @Override
     void initializeSetOfEnemyNames()
     {
         getEnemyNames().add(BABA);
     }
 
+    @Override
     void initializePhaseCompletionTimes()
     {
         for (BabaPhase phase: BabaPhase.values())
@@ -66,5 +68,4 @@ public class BabaStats extends BossStats
                 .append(DMG_FORMAT.format(getPersonalDamage().get(BABA)));
         return stringBuilder.toString();
     }
-
 }

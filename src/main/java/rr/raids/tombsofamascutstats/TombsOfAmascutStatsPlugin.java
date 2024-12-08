@@ -47,6 +47,8 @@ import rr.raids.tombsofamascutstats.stats.*;
 import rr.raids.tombsofamascutstats.stats.phases.AkkhaPhase;
 import rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
 import rr.raids.tombsofamascutstats.stats.phases.KephriPhase;
+import rr.raids.tombsofamascutstats.stats.phases.SecondWardensPhase;
+
 import javax.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -97,7 +99,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	public static final String CORE = "Core";
 	public static final String TUMEKENS_WARDEN = "Tumeken's Warden";
 	public static final String ELIDINIS_WARDEN = "Elidinis' Warden";
-	public static final String ENERGY_SIPHON = "Energy Siphon";
 
 	private static final int KEPHRI_SHIELDED_HEALING_HITSPLAT_ID = HitsplatID.CYAN_UP;
 	private static final int WARDENS_P2_DAMAGE_ME_HITSPLAT_ID = HitsplatID.DAMAGE_ME_POISE;
@@ -176,22 +177,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private final ZebakStats zebakStats = new ZebakStats();
 	private final ObeliskStats obeliskStats = new ObeliskStats();
 	private final FirstWardensStats firstWardensStats = new FirstWardensStats();
+	private final SecondWardensStats secondWardensStats = new SecondWardensStats();
 	private final Set<BossStats> bossStats = ImmutableSet.of(
-			babaStats, kephriStats, akkhaStats, zebakStats, obeliskStats, firstWardensStats
+			babaStats, kephriStats, akkhaStats, zebakStats, obeliskStats, firstWardensStats, secondWardensStats
 	);
-
-	private int wardensP3StartTick = -1;
-	private boolean wardensP4EnrageHeal = false;
-	private int wardensP3CompletionTime;
-	private boolean energySiphonsWhereKilled = false;
-	private int energySiphonBossDamage;
-	private double wardensP3PersonalDamage;
-	private double wardensP3TotalDamage;
-	private LocalPoint lastEnergySiphonPosition;
-
-	private final Map<String, Integer> personalDamage = new HashMap<>(); // key = enemy name, value = damage dealt to the enemy by the player
-	private final Map<String, Integer> totalDamage = new HashMap<>(); // key = enemy name, value = total damage dealt to the enemy
-	private final Map<String, Integer> totalHealing = new HashMap<>(); // key = enemy name, value = healing received by the enemy
 
 	@Provides
 	TombsOfAmascutStatsStatsConfig provideConfig(ConfigManager configManager)
@@ -261,7 +250,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			obeliskStats.resetStats();
 			firstWardensStats.resetStats();
-			resetWardensP3();
+			secondWardensStats.resetStats();
 			resetWardensInfoBoxes();
 			obeliskStats.setStartTick(client.getTickCount());
 		}
@@ -447,9 +436,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			firstWardensStats.setTotalCompletionTime(formatTime(currentTick - firstWardensStats.getStartTick()));
 			//set flag that denotes which Warden was fought first
 			firstWardensStats.setElidnisWardenFought(WARDENS_P2_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find());
+			secondWardensStats.setElidnisWardenFought(!firstWardensStats.isElidnisWardenFought());
 
 			String wardensName = firstWardensStats.isElidnisWardenFought() ? ELIDINIS_WARDEN : TUMEKENS_WARDEN;
 			String shieldedWardensName = wardensName.equals(ELIDINIS_WARDEN) ? ELIDINIS_WARDEN_SHIELDED : TUMEKENS_WARDEN_SHIELDED;
+			int iconId = wardensName.equals(ELIDINIS_WARDEN) ? ELIDNIS_WARDEN_PET_ID : TUMEKENS_WARDEN_PET_ID;
 
 			if (config.chatboxDmg())
 			{
@@ -461,148 +452,53 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			String damage = firstWardensStats.getInfoBoxBossDamageString();
 			String splits = firstWardensStats.getInfoBoxSplitTimesString();
 
-			wardensP2InfoBox = createInfoBox(TUMEKENS_WARDEN_PET_ID, wardensName, firstWardensStats.getTotalCompletionTime(), DECIMAL_FORMAT.format(firstWardensStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
+			wardensP2InfoBox = createInfoBox(iconId, wardensName, firstWardensStats.getTotalCompletionTime(), DECIMAL_FORMAT.format(firstWardensStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
 			infoBoxManager.addInfoBox(wardensP2InfoBox);
 			firstWardensStats.resetStats();
 
-			wardensP3StartTick = client.getTickCount();
+			secondWardensStats.setStartTick(client.getTickCount());
 		}
 		else if (WARDENS_COMPLETE.matcher(strippedMessage).find())
 		{
-			double personalTotalDamage;
-			double totalDamage;
-			int infoBoxIconId;
-			String bossName;
-
-			if (firstWardensStats.isElidnisWardenFought())
+			if (secondWardensStats.getStartTick() < 0)
 			{
-				personalTotalDamage = personalDamage.getOrDefault("Elidinis' Warden", 0);
-				totalDamage = this.totalDamage.getOrDefault("Elidinis' Warden", 0);
-				infoBoxIconId = ELIDNIS_WARDEN_PET_ID;
-				bossName = "P3 Elidinis' Warden";
-			}
-			else
-			{
-				personalTotalDamage = personalDamage.getOrDefault("Tumeken's Warden", 0);
-				totalDamage = this.totalDamage.getOrDefault("Tumeken's Warden", 0);
-				infoBoxIconId = TUMEKENS_WARDEN_PET_ID;
-				bossName = "P3 Tumeken's Warden";
+				return;
 			}
 
-			double wardensP4PersonalDamage = personalTotalDamage - wardensP3PersonalDamage;
-			double wardensP4TotalDamage = totalDamage - wardensP3TotalDamage;
-			double wardensP3Percent = (wardensP3PersonalDamage / wardensP3TotalDamage) * 100;
-			double wardensP4Percent = (wardensP4PersonalDamage / wardensP4TotalDamage) * 100;
-			double totalPercent = (personalTotalDamage / totalDamage) * 100;
-			int roomTicks;
-			int wardensEnrageCompletionTime;
-			String roomCompletionTime = "";
-			String splits = "Times:</br>";
-			String damage = "</br>Damage Dealt:</br>";
 			messages.clear();
 
-			if (wardensP3StartTick > 0)
+			//calculate final phase time and total kill time
+			int currentTick = client.getTickCount();
+			secondWardensStats.getPhaseCompletionTimes().put(SecondWardensPhase.ENRAGE_TO_KILL, formatTime(currentTick - secondWardensStats.getPreviousPhaseEndTick()));
+			secondWardensStats.getPhaseCompletionTimes().put(SecondWardensPhase.TOTAL, formatTime(currentTick - secondWardensStats.getStartTick()));
+
+			String wardensName = secondWardensStats.isElidnisWardenFought() ? ELIDINIS_WARDEN: TUMEKENS_WARDEN;
+			int iconId = wardensName.equals(ELIDINIS_WARDEN) ? ELIDNIS_WARDEN_PET_ID : TUMEKENS_WARDEN_PET_ID;
+
+			if (config.chatboxSplits())
 			{
-				roomTicks = client.getTickCount() - wardensP3StartTick;
-				roomCompletionTime = formatTime(roomTicks);
-				wardensEnrageCompletionTime = roomTicks - wardensP3CompletionTime;
-				splits += "P3 to Enrage - " + formatTime(wardensP3CompletionTime) +
-						"</br>" +
-						"Enrage to kill - " + formatTime(wardensEnrageCompletionTime) +
-						"</br>" +
-						"Total - " + roomCompletionTime;
-
-				if (config.chatboxSplits())
+				for (Map.Entry<SecondWardensPhase, String> entry: secondWardensStats.getPhaseCompletionTimes().entrySet())
 				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("P3 to Enrage - ")
-									.append(Color.RED, formatTime(wardensP3CompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Enrage to kill - ")
-									.append(Color.RED, formatTime(wardensEnrageCompletionTime))
-									.build()
-					);
-
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Total time - ")
-									.append(Color.RED, roomCompletionTime)
-									.build()
-					);
+					String phaseName = entry.getKey().phaseName;
+					String phaseTime = entry.getValue();
+					messages.add(getStatsChatMessage(phaseName, phaseTime));
 				}
 			}
 
-			if (energySiphonBossDamage > 0)
+			if (config.chatboxDmg())
 			{
-				double percentEnergySiphonDamage = (energySiphonBossDamage / totalDamage) * 100;
-				damage += "Energy Siphon damage - " + DMG_FORMAT.format(energySiphonBossDamage) + " (" + DECIMAL_FORMAT.format(percentEnergySiphonDamage) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Energy Siphon damage - ")
-									.append(Color.RED, DMG_FORMAT.format(energySiphonBossDamage) + " (" + DECIMAL_FORMAT.format(percentEnergySiphonDamage) + "%)")
-									.build()
-					);
-				}
+				messages.add(getStatsChatMessage("Energy Siphon damage - ", DMG_FORMAT.format(secondWardensStats.getEnergySiphonBossDamage()) + " (" + DECIMAL_FORMAT.format(secondWardensStats.getPercentageOfEnergySiphonDamage()) + "%)"));
+				messages.add(getStatsChatMessage("Start to Enrage damage dealt - ", DMG_FORMAT.format(secondWardensStats.getPreEnragePersonalDamage()) + " (" + DECIMAL_FORMAT.format(secondWardensStats.getPercentageOfPreEnragePhaseDamageDealt()) + "%)"));
+				messages.add(getStatsChatMessage("Enrage damage dealt - ", DMG_FORMAT.format(secondWardensStats.getEnragePhasePersonalDamageDealt()) + " (" + DECIMAL_FORMAT.format(secondWardensStats.getPercentageOfEnragePhaseDamageDealt()) + "%)"));
+				messages.add(getStatsChatMessage("Total damage dealt - ", DMG_FORMAT.format(secondWardensStats.getTotalPersonalDamageDealt()) + " (" + DECIMAL_FORMAT.format(secondWardensStats.getTotalPercentageOfDamageDealt()) + "%)"));
 			}
 
-			if (wardensP3PersonalDamage > 0)
-			{
-				damage += "P3 to Enrage - " + DMG_FORMAT.format(wardensP3PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP3Percent) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("P3 to Enrage damage dealt - ")
-									.append(Color.RED, DMG_FORMAT.format(wardensP3PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP3Percent) + "%)")
-									.build()
-					);
-				}
-			}
+			String damage = secondWardensStats.getInfoBoxBossDamageString();
+			String splits = secondWardensStats.getInfoBoxSplitTimesString();
 
-			if (wardensP4PersonalDamage > 0)
-			{
-				damage += "Enrage to kill - " + DMG_FORMAT.format(wardensP4PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP4Percent) + "%)" + "</br>";
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Enrage damage dealt - ")
-									.append(Color.RED, DMG_FORMAT.format(wardensP4PersonalDamage) + " (" + DECIMAL_FORMAT.format(wardensP4Percent) + "%)")
-									.build()
-					);
-				}
-			}
-
-			if (personalTotalDamage > 0)
-			{
-				damage += "Total Damage - " + DMG_FORMAT.format(personalTotalDamage);
-				if (config.chatboxDmg())
-				{
-					messages.add(
-							new ChatMessageBuilder()
-									.append(ChatColorType.NORMAL)
-									.append("Total damage dealt - ")
-									.append(Color.RED, DMG_FORMAT.format(personalTotalDamage) + " (" + DECIMAL_FORMAT.format(totalPercent) + "%)")
-									.build()
-					);
-				}
-			}
-			wardensP3InfoBox = createInfoBox(infoBoxIconId, bossName, roomCompletionTime, DECIMAL_FORMAT.format(totalPercent), damage, splits, "");
+			wardensP3InfoBox = createInfoBox(iconId, wardensName, secondWardensStats.getPhaseCompletionTimes().get(SecondWardensPhase.TOTAL), DECIMAL_FORMAT.format(secondWardensStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
 			infoBoxManager.addInfoBox(wardensP3InfoBox);
-			resetWardensP3();
+			secondWardensStats.resetStats();
 		}
 
 		if (!messages.isEmpty())
@@ -810,14 +706,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		if (hitsplat.isMine())
 		{
-			int myDmg = personalDamage.getOrDefault(npcName, 0);
-			int totalDmg = totalDamage.getOrDefault(npcName, 0);
-			myDmg += hitsplat.getAmount();
-			totalDmg += hitsplat.getAmount();
-			personalDamage.put(npcName, myDmg);
-			totalDamage.put(npcName, totalDmg);
-			//TODO remove above lines
-
 			for (BossStats bossStats: bossStats)
 			{
 				if (bossStats.getEnemyNames().contains(npcName))
@@ -828,11 +716,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (hitsplat.isOthers())
 		{
-			int totalDmg = totalDamage.getOrDefault(npcName, 0);
-			totalDmg += hitsplat.getAmount();
-			totalDamage.put(npcName, totalDmg);
-			//TODO remove above lines
-
 			for (BossStats bossStats: bossStats)
 			{
 				if (bossStats.getEnemyNames().contains(npcName))
@@ -841,31 +724,32 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
-			if (isAWarden(npcName) && (wardensP3StartTick > -1) && energySiphonsWhereKilled)
+			if (isAWarden(npcName) && (secondWardensStats.getStartTick() < 0) && secondWardensStats.isEnergySiphonsKilled())
 			{
 				//if a Warden receives damage in P3 and Energy Siphon projectiles were detected, attribute damage to Energy Siphons
-				energySiphonBossDamage += hitsplat.getAmount();
-				energySiphonsWhereKilled = false;
+				secondWardensStats.addToEnergySiphonBossDamage(hitsplat.getAmount());
+				secondWardensStats.setEnergySiphonsKilled(false);
 			}
 		}
 		else if (hitsplat.getHitsplatType() == HitsplatID.HEAL)
 		{
-			int healed = totalHealing.getOrDefault(npcName, 0);
-			healed += hitsplat.getAmount();
-			totalHealing.put(npcName, healed);
-
-			//TODO remove above lines
 			if (isAWarden(npcName))
 			{
-				if (wardensP4EnrageHeal) //the Wardens heal twice, once at the very start of Phase 3 and once when they enter enrage phase/phase 4
+				if (secondWardensStats.isWardensEnrageHeal()) //the Wardens heal twice, once at the very start of Phase 3 and once when they enter enrage phase/phase 4
 				{
 					//on the second heal, record time and damage up to that point
-					wardensP3CompletionTime = client.getTickCount() - wardensP3StartTick;
-					wardensP3PersonalDamage = personalDamage.getOrDefault(npcName, 0);
-					wardensP3TotalDamage = totalDamage.getOrDefault(npcName, 0);
-					wardensP4EnrageHeal = false;
+					int currentTick = client.getTickCount();
+					secondWardensStats.getPhaseCompletionTimes().put(SecondWardensPhase.START_TO_ENRAGE, formatTime(currentTick - secondWardensStats.getStartTick()));
+					secondWardensStats.setPreviousPhaseEndTick(currentTick);
+					secondWardensStats.setPreEnragePersonalDamage(secondWardensStats.getPersonalDamage().get(npcName));
+					secondWardensStats.setPreEnrageTotalDamage(secondWardensStats.getTotalDamage().get(npcName));
+					secondWardensStats.setWardensEnrageHeal(false);
 				}
-				wardensP4EnrageHeal = true;
+				else
+				{
+					//set enrage heal flag to true as the next heal that Wardens receives will be from the start of enrage
+					secondWardensStats.setWardensEnrageHeal(true);
+				}
 			}
 		}
 		else if (hitsplat.getHitsplatType() == KEPHRI_SHIELDED_HEALING_HITSPLAT_ID && npcName.equals(KEPHRI)) //Hitsplat ID is shared with Palm of Resourcefulness
@@ -880,14 +764,14 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		if (event.getProjectile().getId() == 2226) //ID 2226 is that of the energy siphons (red skulls) as they fly to or from the Warden in P3
 		{
 			log.info("energy siphon projectile event position: {}", event.getPosition().toString());
-			if (areLocalPointsEqual(event.getPosition(), lastEnergySiphonPosition))
+			if (areLocalPointsEqual(event.getPosition(), secondWardensStats.getLastEnergySiphonPosition()))
 			{
-				if (!energySiphonsWhereKilled)
+				if (!secondWardensStats.isEnergySiphonsKilled())
 				{
-					energySiphonsWhereKilled = true;
+					secondWardensStats.setEnergySiphonsKilled(true);
 				}
 			}
-			lastEnergySiphonPosition = event.getPosition();
+			secondWardensStats.setLastEnergySiphonPosition(event.getPosition());
 		}
 	}
 
@@ -908,7 +792,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			return false;
 		}
-		return npcName.equalsIgnoreCase("Elidinis' Warden") || npcName.equalsIgnoreCase("Tumeken's Warden");
+		return npcName.equalsIgnoreCase(ELIDINIS_WARDEN) || npcName.equalsIgnoreCase(TUMEKENS_WARDEN);
 	}
 
 	private boolean isWardensP2Hitsplat(Hitsplat hitsplat)
@@ -954,21 +838,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				.build();
 	}
 
-	private void resetWardensP3()
-	{
-		wardensP3StartTick = -1;
-		wardensP3CompletionTime = 0;
-		wardensP3PersonalDamage = 0;
-		wardensP3TotalDamage = 0;
-		wardensP4EnrageHeal = false;
-		energySiphonBossDamage = 0;
-		energySiphonsWhereKilled = false;
-		lastEnergySiphonPosition = null;
-		personalDamage.clear();
-		totalDamage.clear();
-		totalHealing.clear();
-	}
-
 	private void resetAll()
 	{
 		babaStats.resetStats();
@@ -977,7 +846,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		zebakStats.resetStats();
 		obeliskStats.resetStats();
 		firstWardensStats.resetStats();
-		resetWardensP3();
+		secondWardensStats.resetStats();
 	}
 
 	private void resetWardensInfoBoxes()
