@@ -24,7 +24,6 @@
  */
 package rr.raids.tombsofamascutstats;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -104,7 +103,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final int WARDENS_P2_DAMAGE_ME_HITSPLAT_ID = HitsplatID.DAMAGE_ME_POISE;
 	private static final int WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID = HitsplatID.DAMAGE_OTHER_POISE;
 	private static final int WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID = HitsplatID.DAMAGE_MAX_ME_POISE;
-
 	private static final int PRECISE_TIMER = 11866;
 	private static final int TICK_LENGTH = 600;
 	private static final int BABA_PET_ID = 27383;
@@ -127,8 +125,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final int WARDENS_P3_ROOM_REGION_ID = 15696;
 	private static final int TOA_LOOT_ROOM_REGION_ID = 14672;
 	private static final int TOA_LOBBY_REGION_ID = 13454;
+	private static final int ENERGY_SIPHON_PROJECTILE_ID = 2226;
 
-	private static final Set<Integer> TOA_ROOM_IDS = ImmutableSet.of(
+	private static final Set<Integer> TOA_ROOM_IDS = Set.of(
 			TOA_NEXUS_REGION_ID,
 			BABA_PUZZLE_ROOM_REGION_ID,
 			BABA_ROOM_REGION_ID,
@@ -164,12 +163,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private TombsOfAmascutStatsStatsInfoBox akkhaInfoBox;
 	private TombsOfAmascutStatsStatsInfoBox zebakInfoBox;
 	private TombsOfAmascutStatsStatsInfoBox obeliskInfoBox;
-	private TombsOfAmascutStatsStatsInfoBox wardensP2InfoBox;
-	private TombsOfAmascutStatsStatsInfoBox wardensP3InfoBox;
+	private TombsOfAmascutStatsStatsInfoBox firstWardensInfoBox;
+	private TombsOfAmascutStatsStatsInfoBox secondWardensInfoBox;
 
 	private boolean currentlyInsideToA;
-	private boolean instanced;
-	private boolean preciseTimers;
+	private boolean worldViewIsInstanced;
+	private boolean preciseTimersAreTurnedOn;
 
 	private final BabaStats babaStats = new BabaStats();
 	private final KephriStats kephriStats = new KephriStats();
@@ -178,7 +177,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private final ObeliskStats obeliskStats = new ObeliskStats();
 	private final FirstWardensStats firstWardensStats = new FirstWardensStats();
 	private final SecondWardensStats secondWardensStats = new SecondWardensStats();
-	private final Set<BossStats> bossStats = ImmutableSet.of(
+	private final Set<BossStats> setOfBossStats = Set.of(
 			babaStats, kephriStats, akkhaStats, zebakStats, obeliskStats, firstWardensStats, secondWardensStats
 	);
 
@@ -204,7 +203,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 
 		int preciseTimerVar = client.getVarbitValue(PRECISE_TIMER);
-		preciseTimers = preciseTimerVar == 1 ;
+		preciseTimersAreTurnedOn = preciseTimerVar == 1 ;
 
 		int currentRegionId = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
 		currentlyInsideToA = TOA_ROOM_IDS.contains(currentRegionId);
@@ -212,6 +211,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		if (!currentlyInsideToA)
 		{
 			resetAll();
+			resetAllInfoBoxes();
 		}
 	}
 
@@ -452,8 +452,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			String damage = firstWardensStats.getInfoBoxBossDamageString();
 			String splits = firstWardensStats.getInfoBoxSplitTimesString();
 
-			wardensP2InfoBox = createInfoBox(iconId, wardensName, firstWardensStats.getTotalCompletionTime(), DECIMAL_FORMAT.format(firstWardensStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
-			infoBoxManager.addInfoBox(wardensP2InfoBox);
+			firstWardensInfoBox = createInfoBox(iconId, wardensName, firstWardensStats.getTotalCompletionTime(), DECIMAL_FORMAT.format(firstWardensStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
+			infoBoxManager.addInfoBox(firstWardensInfoBox);
 			firstWardensStats.resetStats();
 
 			secondWardensStats.setStartTick(client.getTickCount());
@@ -496,8 +496,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			String damage = secondWardensStats.getInfoBoxBossDamageString();
 			String splits = secondWardensStats.getInfoBoxSplitTimesString();
 
-			wardensP3InfoBox = createInfoBox(iconId, wardensName, secondWardensStats.getPhaseCompletionTimes().get(SecondWardensPhase.TOTAL), DECIMAL_FORMAT.format(secondWardensStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
-			infoBoxManager.addInfoBox(wardensP3InfoBox);
+			secondWardensInfoBox = createInfoBox(iconId, wardensName, secondWardensStats.getPhaseCompletionTimes().get(SecondWardensPhase.TOTAL), DECIMAL_FORMAT.format(secondWardensStats.getTotalPercentageOfDamageDealt()), damage, splits, "");
+			infoBoxManager.addInfoBox(secondWardensInfoBox);
 			secondWardensStats.resetStats();
 		}
 
@@ -574,6 +574,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.TWENTY_TO_ENRAGE, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 				akkhaStats.setPreviousPhaseEndTick(currentTick);
 				break;
+			default:
+				break;
 		}
 	}
 
@@ -587,27 +589,29 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		NPC npc = event.getNpc();
 
-		if (npc.getId() == NpcID.AKKHAS_SHADOW)
+		if (npc.getId() != NpcID.AKKHAS_SHADOW)
 		{
-			int currentTick = client.getTickCount();
-			if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.ONE_HUNDRED_TO_EIGHTY)))
-			{
-				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.ONE_HUNDRED_TO_EIGHTY, formatTime(currentTick - akkhaStats.getStartTick()));
-			}
-			else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.EIGHTY_TO_SIXTY)))
-			{
-				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.EIGHTY_TO_SIXTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
-			}
-			else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SIXTY_TO_FORTY)))
-			{
-				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SIXTY_TO_FORTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
-			}
-			else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.FORTY_TO_TWENTY)))
-			{
-				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.FORTY_TO_TWENTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
-			}
-			akkhaStats.setPreviousPhaseEndTick(currentTick);
+			return;
 		}
+
+		int currentTick = client.getTickCount();
+		if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.ONE_HUNDRED_TO_EIGHTY)))
+		{
+			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.ONE_HUNDRED_TO_EIGHTY, formatTime(currentTick - akkhaStats.getStartTick()));
+		}
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.EIGHTY_TO_SIXTY)))
+		{
+			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.EIGHTY_TO_SIXTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
+		}
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SIXTY_TO_FORTY)))
+		{
+			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SIXTY_TO_FORTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
+		}
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.FORTY_TO_TWENTY)))
+		{
+			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.FORTY_TO_TWENTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
+		}
+		akkhaStats.setPreviousPhaseEndTick(currentTick);
 	}
 
 	@Subscribe
@@ -620,27 +624,29 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		NPC npc = event.getNpc();
 
-		if (npc.getId() == NpcID.AKKHAS_SHADOW)
+		if (npc.getId() != NpcID.AKKHAS_SHADOW)
 		{
-			int currentTick = client.getTickCount();
-			if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_1)))
-			{
-				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_1, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
-			}
-			else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_2)))
-			{
-				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_2, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
-			}
-			else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_3)))
-			{
-				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_3, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
-			}
-			else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_4)))
-			{
-				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_4, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
-			}
-			akkhaStats.setPreviousPhaseEndTick(currentTick);
+			return;
 		}
+
+		int currentTick = client.getTickCount();
+		if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_1)))
+		{
+			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_1, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
+		}
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_2)))
+		{
+			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_2, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
+		}
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_3)))
+		{
+			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_3, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
+		}
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_4)))
+		{
+			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_4, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
+		}
+		akkhaStats.setPreviousPhaseEndTick(currentTick);
 	}
 
 	@Subscribe
@@ -651,19 +657,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			return;
 		}
 
-		boolean prevInstance = instanced;
-		instanced = client.getLocalPlayer().getWorldView().isInstance();
+		boolean previousWorldViewWasInstanced = worldViewIsInstanced;
+		worldViewIsInstanced = client.getLocalPlayer().getWorldView().isInstance();
 
-		if (prevInstance && !instanced) //going from raid into lobby
-		{
-			resetAll();
-		}
-		else if (!prevInstance && !instanced) //going from lobby into raid
-		{
-			resetAll();
-			resetAllInfoBoxes();
-		}
-		else if (!prevInstance && instanced) //going from lobby into anywhere else
+		if (!previousWorldViewWasInstanced && worldViewIsInstanced) //going from open world lobby into raid instance
 		{
 			resetAll();
 			resetAllInfoBoxes();
@@ -706,7 +703,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		if (hitsplat.isMine())
 		{
-			for (BossStats bossStats: bossStats)
+			for (BossStats bossStats: setOfBossStats)
 			{
 				if (bossStats.getEnemyNames().contains(npcName))
 				{
@@ -716,7 +713,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 		else if (hitsplat.isOthers())
 		{
-			for (BossStats bossStats: bossStats)
+			for (BossStats bossStats: setOfBossStats)
 			{
 				if (bossStats.getEnemyNames().contains(npcName))
 				{
@@ -761,18 +758,16 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onProjectileMoved(ProjectileMoved event)
 	{
-		if (event.getProjectile().getId() == 2226) //ID 2226 is that of the energy siphons (red skulls) as they fly to or from the Warden in P3
+		if (event.getProjectile().getId() != ENERGY_SIPHON_PROJECTILE_ID)
 		{
-			log.info("energy siphon projectile event position: {}", event.getPosition().toString());
-			if (areLocalPointsEqual(event.getPosition(), secondWardensStats.getLastEnergySiphonPosition()))
-			{
-				if (!secondWardensStats.isEnergySiphonsKilled())
-				{
-					secondWardensStats.setEnergySiphonsKilled(true);
-				}
-			}
-			secondWardensStats.setLastEnergySiphonPosition(event.getPosition());
+			return;
 		}
+		log.info("energy siphon projectile event position: {}", event.getPosition().toString());
+		if (areLocalPointsEqual(event.getPosition(), secondWardensStats.getLastEnergySiphonPosition()))
+		{
+			secondWardensStats.setEnergySiphonsKilled(true);
+		}
+		secondWardensStats.setLastEnergySiphonPosition(event.getPosition());
 	}
 
 	private boolean areLocalPointsEqual(LocalPoint localPointOne, LocalPoint localPointTwo)
@@ -814,7 +809,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		int millis = ticks * TICK_LENGTH;
 		String hundredths = String.valueOf(millis % 1000).substring(0, 1);
 
-		if (preciseTimers)
+		if (preciseTimersAreTurnedOn)
 		{
 			return String.format("%d:%02d.%s",
 				TimeUnit.MILLISECONDS.toMinutes(millis) % TimeUnit.HOURS.toMinutes(1),
@@ -852,8 +847,8 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private void resetWardensInfoBoxes()
 	{
 		infoBoxManager.removeInfoBox(obeliskInfoBox);
-		infoBoxManager.removeInfoBox(wardensP2InfoBox);
-		infoBoxManager.removeInfoBox(wardensP3InfoBox);
+		infoBoxManager.removeInfoBox(firstWardensInfoBox);
+		infoBoxManager.removeInfoBox(secondWardensInfoBox);
 	}
 
 	private void resetAllInfoBoxes()
@@ -863,7 +858,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		infoBoxManager.removeInfoBox(akkhaInfoBox);
 		infoBoxManager.removeInfoBox(zebakInfoBox);
 		infoBoxManager.removeInfoBox(obeliskInfoBox);
-		infoBoxManager.removeInfoBox(wardensP2InfoBox);
-		infoBoxManager.removeInfoBox(wardensP3InfoBox);
+		infoBoxManager.removeInfoBox(firstWardensInfoBox);
+		infoBoxManager.removeInfoBox(secondWardensInfoBox);
 	}
 }
