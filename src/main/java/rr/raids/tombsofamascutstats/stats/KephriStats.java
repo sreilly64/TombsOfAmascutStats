@@ -16,11 +16,12 @@ public class KephriStats extends BossStats
     private boolean isFirstShieldDown = true;
     private int firstShieldDownHealing = 0;
     private int shieldTotalHealing = 0;
-    private Map<KephriPhase, String> phaseCompletionTimes = new LinkedHashMap<>(); // key = phase name, value = phase completion time
+    private Map<KephriPhase, String> phaseCompletionTimes; // key = phase name, value = phase completion time
 
     public KephriStats()
     {
         super();
+        phaseCompletionTimes = new LinkedHashMap<>();
     }
 
     public void addToKephriShieldTotalHealing(int amount)
@@ -56,6 +57,10 @@ public class KephriStats extends BossStats
     @Override
     void initializePhaseCompletionTimes()
     {
+        if (phaseCompletionTimes == null)
+        {
+            phaseCompletionTimes = new LinkedHashMap<>();
+        }
         for (KephriPhase phase: KephriPhase.values())
         {
             phaseCompletionTimes.put(phase, null);

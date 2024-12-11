@@ -14,11 +14,12 @@ import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.DMG_FORMAT;
 public class BabaStats extends BossStats
 {
 
-    private Map<BabaPhase, String> phaseCompletionTimes = new LinkedHashMap<>(); // key = phase name, value = phase completion time
+    private Map<BabaPhase, String> phaseCompletionTimes; // key = phase name, value = phase completion time
 
     public BabaStats()
     {
         super();
+        phaseCompletionTimes = new LinkedHashMap<>();
     }
 
     @Override
@@ -30,6 +31,10 @@ public class BabaStats extends BossStats
     @Override
     void initializePhaseCompletionTimes()
     {
+        if (phaseCompletionTimes == null)
+        {
+            phaseCompletionTimes = new LinkedHashMap<>();
+        }
         for (BabaPhase phase: BabaPhase.values())
         {
             phaseCompletionTimes.put(phase, null);

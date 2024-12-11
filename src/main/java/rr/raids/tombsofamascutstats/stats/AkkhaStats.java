@@ -13,11 +13,12 @@ import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.*;
 public class AkkhaStats extends BossStats
 {
 
-    private Map<AkkhaPhase, String> phaseCompletionTimes = new LinkedHashMap<>(); // key = phase name, value = phase completion time
+    private Map<AkkhaPhase, String> phaseCompletionTimes; // key = phase name, value = phase completion time
 
     public AkkhaStats()
     {
         super();
+        phaseCompletionTimes = new LinkedHashMap<>();
     }
 
     @Override
@@ -30,6 +31,10 @@ public class AkkhaStats extends BossStats
     @Override
     void initializePhaseCompletionTimes()
     {
+        if (phaseCompletionTimes == null)
+        {
+            phaseCompletionTimes = new LinkedHashMap<>();
+        }
         for (AkkhaPhase phase: AkkhaPhase.values())
         {
             phaseCompletionTimes.put(phase, null);

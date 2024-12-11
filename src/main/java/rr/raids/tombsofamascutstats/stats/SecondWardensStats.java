@@ -21,12 +21,13 @@ public class SecondWardensStats extends BossStats
     private int preEnragePersonalDamage;
     private int preEnrageTotalDamage;
     private LocalPoint lastEnergySiphonPosition;
-    private Map<SecondWardensPhase, String> phaseCompletionTimes = new LinkedHashMap<>(); // key = phase name, value = phase completion time
+    private Map<SecondWardensPhase, String> phaseCompletionTimes; // key = phase name, value = phase completion time
 
 
     public SecondWardensStats()
     {
         super();
+        phaseCompletionTimes = new LinkedHashMap<>();
     }
 
     public void addToEnergySiphonBossDamage(int amount)
@@ -75,6 +76,10 @@ public class SecondWardensStats extends BossStats
     @Override
     void initializePhaseCompletionTimes()
     {
+        if (phaseCompletionTimes == null)
+        {
+            phaseCompletionTimes = new LinkedHashMap<>();
+        }
         for (SecondWardensPhase phase: SecondWardensPhase.values())
         {
             phaseCompletionTimes.put(phase, null);
