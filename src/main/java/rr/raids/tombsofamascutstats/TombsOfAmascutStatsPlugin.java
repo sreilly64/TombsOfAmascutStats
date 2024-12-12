@@ -456,6 +456,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			infoBoxManager.addInfoBox(firstWardensInfoBox);
 			firstWardensStats.resetStats();
 
+			secondWardensStats.resetStats();
 			secondWardensStats.setStartTick(client.getTickCount());
 		}
 		else if (WARDENS_COMPLETE.matcher(strippedMessage).find())
@@ -599,15 +600,18 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.ONE_HUNDRED_TO_EIGHTY, formatTime(currentTick - akkhaStats.getStartTick()));
 		}
-		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.EIGHTY_TO_SIXTY)))
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.EIGHTY_TO_SIXTY))
+				&& !StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_1)))
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.EIGHTY_TO_SIXTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 		}
-		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SIXTY_TO_FORTY)))
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SIXTY_TO_FORTY))
+				&& !StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_2)))
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SIXTY_TO_FORTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 		}
-		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.FORTY_TO_TWENTY)))
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.FORTY_TO_TWENTY))
+				&& !StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_3)))
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.FORTY_TO_TWENTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 		}
@@ -630,19 +634,23 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		}
 
 		int currentTick = client.getTickCount();
-		if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_1)))
+		if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_1))
+			&& !StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.ONE_HUNDRED_TO_EIGHTY)))
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_1, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 		}
-		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_2)))
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_2))
+				&& !StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.EIGHTY_TO_SIXTY)))
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_2, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 		}
-		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_3)))
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_3))
+				&& !StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SIXTY_TO_FORTY)))
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_3, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 		}
-		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_4)))
+		else if (StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.SHADOW_4))
+				&& !StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.FORTY_TO_TWENTY)))
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_4, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 		}
@@ -721,7 +729,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 			}
 
-			if (isAWarden(npcName) && (secondWardensStats.getStartTick() < 0) && secondWardensStats.isEnergySiphonsKilled())
+			if (isAWarden(npcName) && (secondWardensStats.getStartTick() > -1) && secondWardensStats.isEnergySiphonsKilled())
 			{
 				//if a Warden receives damage in P3 and Energy Siphon projectiles were detected, attribute damage to Energy Siphons
 				secondWardensStats.addToEnergySiphonBossDamage(hitsplat.getAmount());
