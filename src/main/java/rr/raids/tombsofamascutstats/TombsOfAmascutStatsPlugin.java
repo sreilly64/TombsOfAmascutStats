@@ -615,6 +615,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.FORTY_TO_TWENTY, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 		}
+		else
+		{
+			return; //multiple Shadows spawn at once, only want the first one to trigger below setter
+		}
 		akkhaStats.setPreviousPhaseEndTick(currentTick);
 	}
 
@@ -653,6 +657,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				&& !StringUtils.isEmpty(akkhaStats.getPhaseCompletionTimes().get(AkkhaPhase.FORTY_TO_TWENTY)))
 		{
 			akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.SHADOW_4, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
+		}
+		else
+		{
+			return; //multiple Shadows despawn at once, only want the first one to trigger below setter
 		}
 		akkhaStats.setPreviousPhaseEndTick(currentTick);
 	}
@@ -770,9 +778,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			return;
 		}
-		log.info("energy siphon projectile event position: {}", event.getPosition().toString());
+		// event.getPosition() gets LocalPoint of the projectile's destination
 		if (areLocalPointsEqual(event.getPosition(), secondWardensStats.getLastEnergySiphonPosition()))
 		{
+			// if multiple Energy Siphons are moving towards the same LocalPoint, then they are moving towards the Warden
 			secondWardensStats.setEnergySiphonsKilled(true);
 		}
 		secondWardensStats.setLastEnergySiphonPosition(event.getPosition());
