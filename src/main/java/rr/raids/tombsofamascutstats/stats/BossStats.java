@@ -25,7 +25,7 @@ public abstract class BossStats
     public abstract String getInfoBoxSplitTimesString();
     public abstract String getInfoBoxBossDamageString();
 
-    public BossStats()
+    protected BossStats()
     {
         initializeSetOfEnemyNames();
         initializeBossDamageMaps();
