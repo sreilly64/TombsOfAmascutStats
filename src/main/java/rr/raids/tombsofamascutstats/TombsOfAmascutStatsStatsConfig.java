@@ -10,7 +10,7 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 {
 	@ConfigSection(
 		name = "Chatbox Messages",
-		description = "Settings for messages in the chatbox",
+		description = "Configure settings for the chatbox messages",
 		position = 0
 	)
 	String CHAT_SETTINGS = "chatSettings";
@@ -18,7 +18,7 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 	@ConfigItem(
 		keyName = "chatboxDmg",
 		name = "Print Damage To Chat",
-		description = "Print personal damage and percentage of total to chat",
+		description = "Print personal damage and percentage of total damage to the chat",
 		section = CHAT_SETTINGS,
 		position = 0
 	)
@@ -30,7 +30,7 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 	@ConfigItem(
 		keyName = "chatboxSplits",
 		name = "Print Splits To Chat",
-		description = "Print detailed room splits to chat",
+		description = "Print detailed room splits to the chat",
 		section = CHAT_SETTINGS,
 		position = 2
 	)
@@ -41,7 +41,7 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 
 	@ConfigSection(
 		name = "Info Boxes",
-		description = "Settings for the infoboxes",
+		description = "Configure settings for the infoboxes",
 		position = 1
 	)
 	String INFO_BOX_SETTINGS = "infoBoxSettings";
@@ -61,7 +61,7 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 	@ConfigItem(
 		keyName = "infoBoxText",
 		name = "Info Box Text",
-		description = "The text displayed on the info box",
+		description = "The text displayed on the info boxes",
 		section = INFO_BOX_SETTINGS,
 		position = 1
 	)
@@ -73,7 +73,7 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 	@ConfigItem(
 		keyName = "infoBoxTooltip",
 		name = "Info Box Tooltip",
-		description = "Display info box tooltip",
+		description = "Display info box tooltip when hovered over with mouse",
 		section = INFO_BOX_SETTINGS,
 		position = 2
 	)
@@ -102,6 +102,25 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 		position = 5
 	)
 	default boolean infoBoxTooltipSplits()
+	{
+		return true;
+	}
+
+	@ConfigSection(
+			name = "Party Plugin Overlay",
+			description = "Configure settings for the Party Plugin Overlay",
+			position = 2
+	)
+	String PARTY_PLUGIN_OVERLAY_SETTINGS = "partyPluginOverlaySettings";
+
+	@ConfigItem(
+			keyName = "partyPluginOverlayToggle",
+			name = "Display Party Damage Overlay",
+			description = "If in a Party via Party plugin, toggles whether to display an overlay of all party members' current damage contributions",
+			section = PARTY_PLUGIN_OVERLAY_SETTINGS,
+			position = 0
+	)
+	default boolean partyPluginOverlayToggle()
 	{
 		return true;
 	}

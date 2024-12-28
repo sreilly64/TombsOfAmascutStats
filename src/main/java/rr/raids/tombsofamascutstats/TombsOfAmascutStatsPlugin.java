@@ -30,6 +30,7 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
@@ -37,11 +38,18 @@ import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.party.PartyService;
+import net.runelite.client.party.WSClient;
+import net.runelite.client.party.events.UserJoin;
+import net.runelite.client.party.events.UserPart;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.Text;
 import org.apache.commons.lang3.StringUtils;
+import rr.raids.tombsofamascutstats.party.PartyDamageOverlay;
+import rr.raids.tombsofamascutstats.party.PartyMemberDamageStats;
 import rr.raids.tombsofamascutstats.stats.*;
 import rr.raids.tombsofamascutstats.stats.phases.AkkhaPhase;
 import rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
@@ -69,6 +77,21 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private Client client;
 
 	@Inject
+	private ClientThread clientThread;
+
+	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
+	private PartyDamageOverlay partyDamageOverlay;
+
+	@Inject
+	private PartyService partyService;
+
+	@Inject
+	private WSClient wsClient;
+
+	@Inject
 	private TombsOfAmascutStatsStatsConfig config;
 
 	@Inject
@@ -88,6 +111,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 	public static final String BABA = "Ba-Ba";
 	public static final String KEPHRI = "Kephri";
+	public static final String ARCANE_SCARAB = "Arcane Scarab";
+	public static final String SOLDIER_SCARAB = "Soldier Scarab";
+	public static final String SPITTING_SCARAB = "Spitting Scarab";
 	public static final String SCARABS = "Scarabs";
 	public static final String AKKHA = "Akkha";
 	public static final String AKKHAS_SHADOW = "Akkha's Shadow";
@@ -98,6 +124,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	public static final String CORE = "Core";
 	public static final String TUMEKENS_WARDEN = "Tumeken's Warden";
 	public static final String ELIDINIS_WARDEN = "Elidinis' Warden";
+
+	public static final Set<String> SCARAB_OVERLOADS = Set.of(
+			ARCANE_SCARAB,
+			SOLDIER_SCARAB,
+			SPITTING_SCARAB
+	);
 
 	private static final int KEPHRI_SHIELDED_HEALING_HITSPLAT_ID = HitsplatID.CYAN_UP;
 	private static final int WARDENS_P2_DAMAGE_ME_HITSPLAT_ID = HitsplatID.DAMAGE_ME_POISE;
@@ -126,8 +158,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	private static final int TOA_LOOT_ROOM_REGION_ID = 14672;
 	private static final int TOA_LOBBY_REGION_ID = 13454;
 	private static final int ENERGY_SIPHON_PROJECTILE_ID = 2226;
+	private static final int CAMERA_VIEW_VARBIT_ID = 384;
 
-	private static final Set<Integer> TOA_ROOM_IDS = Set.of(
+	public static final Set<Integer> TOA_ROOM_IDS = Set.of(
 			TOA_NEXUS_REGION_ID,
 			BABA_PUZZLE_ROOM_REGION_ID,
 			BABA_ROOM_REGION_ID,
@@ -188,16 +221,42 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	}
 
 	@Override
+	protected void startUp() throws Exception
+	{
+		resetAllStats();
+		resetAllInfoBoxes();
+		overlayManager.add(partyDamageOverlay);
+		wsClient.registerMessage(PartyMemberDamageStats.class);
+		checkPlayerCurrentLocation();
+	}
+
+	@Override
 	protected void shutDown() throws Exception
 	{
-		resetAll();
+		resetAllStats();
 		resetAllInfoBoxes();
+		overlayManager.remove(partyDamageOverlay);
+		wsClient.unregisterMessage(PartyMemberDamageStats.class);
 	}
 
 	@Subscribe
-	public void onVarbitChanged(VarbitChanged event)
+	public void onPartyMemberDamageStats(PartyMemberDamageStats partyMemberDamageStatsUpdate)
 	{
-		if (client.getLocalPlayer() == null)
+		clientThread.invoke(() ->
+		{
+			log.info("PartyMemberDamageStats received with memberId = {}, current damage = {}, and percentage = {}",
+					partyMemberDamageStatsUpdate.getMemberId(),
+					partyMemberDamageStatsUpdate.getCurrentDamageDealt(),
+					partyMemberDamageStatsUpdate.getPercentOfTotalDamageDealt());
+
+			partyDamageOverlay.updatePartyMemberDamageStats(partyMemberDamageStatsUpdate);
+		});
+	}
+
+	@Subscribe
+	public void onVarClientIntChanged(VarClientIntChanged event)
+	{
+		if (event.getIndex() != CAMERA_VIEW_VARBIT_ID)
 		{
 			return;
 		}
@@ -205,14 +264,60 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		int preciseTimerVar = client.getVarbitValue(PRECISE_TIMER);
 		preciseTimersAreTurnedOn = preciseTimerVar == 1 ;
 
-		int currentRegionId = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
-		currentlyInsideToA = TOA_ROOM_IDS.contains(currentRegionId);
+		checkPlayerCurrentLocation();
+	}
 
-		if (!currentlyInsideToA)
+	private void checkPlayerCurrentLocation()
+	{
+		if (client.getLocalPlayer() == null)
 		{
-			resetAll();
-			resetAllInfoBoxes();
+			return;
 		}
+
+		int currentRegionId = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
+		boolean updatedCurrentlyInsideToA = TOA_ROOM_IDS.contains(currentRegionId);
+
+		if (updatedCurrentlyInsideToA != currentlyInsideToA)
+		{
+			currentlyInsideToA = updatedCurrentlyInsideToA;
+			log.info("currentlyInsideToA updated to: {}", currentlyInsideToA);
+			partyDamageOverlay.setCurrentlyInsideToA(currentlyInsideToA);
+			sendInitialPartyMemberDamageStatsMessage();
+
+			if (!currentlyInsideToA)
+			{
+				resetAllStats();
+				resetAllInfoBoxes();
+			}
+		}
+	}
+
+	private void sendInitialPartyMemberDamageStatsMessage()
+	{
+		if (!partyService.isInParty())
+		{
+			return;
+		}
+
+		PartyMemberDamageStats partyMemberDamageStats = PartyMemberDamageStats.builder()
+				.currentlyInsideToA(currentlyInsideToA)
+				.build();
+		partyService.send(partyMemberDamageStats);
+	}
+
+	@Subscribe(priority = 1) // run prior to plugins so that the member is joined by the time the plugins see it.
+	public void onUserJoin(final UserJoin message)
+	{
+		log.info("onUserJoin memberId = {}, partyId = {}", message.getMemberId(), message.getPartyId());
+		log.info("partyService getLocalMember() = {}, partyId = {}", partyService.getLocalMember().toString(), partyService.getPartyId());
+		sendInitialPartyMemberDamageStatsMessage();
+	}
+
+	@Subscribe(priority = 1) // run prior to plugins so that the member is joined by the time the plugins see it.
+	public void onUserPart(final UserPart message)
+	{
+		log.info("User {} with ID {} left the party.", partyService.getMemberById(message.getMemberId()).getDisplayName(), message.getMemberId());
+		partyDamageOverlay.removePartyMember(message.getMemberId());
 	}
 
 	@Subscribe
@@ -230,21 +335,25 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		{
 			babaStats.resetStats();
 			babaStats.setStartTick(client.getTickCount());
+			partyDamageOverlay.resetPartyMemberDamageStats();
 		}
 		else if (KEPHRI_STARTED.matcher(strippedMessage).find())
 		{
 			kephriStats.resetStats();
 			kephriStats.setStartTick(client.getTickCount());
+			partyDamageOverlay.resetPartyMemberDamageStats();
 		}
 		else if (AKKHA_STARTED.matcher(strippedMessage).find())
 		{
 			akkhaStats.resetStats();
 			akkhaStats.setStartTick(client.getTickCount());
+			partyDamageOverlay.resetPartyMemberDamageStats();
 		}
 		else if (ZEBAK_STARTED.matcher(strippedMessage).find())
 		{
 			zebakStats.resetStats();
 			zebakStats.setStartTick(client.getTickCount());
+			partyDamageOverlay.resetPartyMemberDamageStats();
 		}
 		else if (WARDENS_STARTED.matcher(strippedMessage).find())
 		{
@@ -253,6 +362,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			secondWardensStats.resetStats();
 			resetWardensInfoBoxes();
 			obeliskStats.setStartTick(client.getTickCount());
+			partyDamageOverlay.resetPartyMemberDamageStats();
 		}
 		else if (BABA_COMPLETE.matcher(strippedMessage).find())
 		{
@@ -402,6 +512,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				return;
 			}
 
+			partyDamageOverlay.resetPartyMemberDamageStats();
 			messages.clear();
 
 			//calculate final phase time and total kill time
@@ -429,6 +540,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				return;
 			}
 
+			partyDamageOverlay.resetPartyMemberDamageStats();
 			messages.clear();
 
 			//calculate final phase time and total kill time
@@ -676,10 +788,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 		boolean previousWorldViewWasInstanced = worldViewIsInstanced;
 		worldViewIsInstanced = client.getLocalPlayer().getWorldView().isInstance();
 
-		if (!previousWorldViewWasInstanced && worldViewIsInstanced) //going from open world lobby into raid instance
+		if (!previousWorldViewWasInstanced && worldViewIsInstanced && currentlyInsideToA) //going from open world lobby into raid instance
 		{
-			resetAll();
+			resetAllStats();
 			resetAllInfoBoxes();
+			partyDamageOverlay.resetPartyMemberDamageStats();
 		}
 	}
 
@@ -687,6 +800,13 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
 		if (!currentlyInsideToA)
+		{
+			return;
+		}
+
+		Hitsplat hitsplat = event.getHitsplat();
+
+		if (hitsplat.getAmount() == 0)
 		{
 			return;
 		}
@@ -705,12 +825,10 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			return;
 		}
 
-		if (npcName.contains("Scarab"))
+		if (SCARAB_OVERLOADS.contains(npcName))
 		{
 			npcName = SCARABS; //group all damage to Scarab Overlords under one name
 		}
-
-		Hitsplat hitsplat = event.getHitsplat();
 
 		if (isWardensP2Hitsplat(hitsplat))
 		{
@@ -724,6 +842,16 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				if (bossStats.getEnemyNames().contains(npcName))
 				{
 					bossStats.addToPersonalDamage(npcName, hitsplat.getAmount());
+
+					if (partyService.isInParty())
+					{
+						PartyMemberDamageStats partyMemberDamageStats = PartyMemberDamageStats.builder()
+								.currentDamageDealt(bossStats.getTotalPersonalDamageDealt())
+								.percentOfTotalDamageDealt(bossStats.getTotalPercentageOfDamageDealt())
+								.currentlyInsideToA(currentlyInsideToA)
+								.build();
+						partyService.send(partyMemberDamageStats);
+					}
 				}
 			}
 		}
@@ -850,7 +978,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				.build();
 	}
 
-	private void resetAll()
+	private void resetAllStats()
 	{
 		babaStats.resetStats();
 		kephriStats.resetStats();
