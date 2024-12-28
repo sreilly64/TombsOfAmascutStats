@@ -131,34 +131,34 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			SPITTING_SCARAB
 	);
 
-	private static final int KEPHRI_SHIELDED_HEALING_HITSPLAT_ID = HitsplatID.CYAN_UP;
-	private static final int WARDENS_P2_DAMAGE_ME_HITSPLAT_ID = HitsplatID.DAMAGE_ME_POISE;
-	private static final int WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID = HitsplatID.DAMAGE_OTHER_POISE;
-	private static final int WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID = HitsplatID.DAMAGE_MAX_ME_POISE;
-	private static final int PRECISE_TIMER = 11866;
-	private static final int TICK_LENGTH = 600;
-	private static final int BABA_PET_ID = 27383;
-	private static final int KEPHRI_PET_ID = 27384;
-	private static final int AKKHA_PET_ID = 27382;
-	private static final int ZEBAK_PET_ID = 27385;
-	private static final int OBELISK_ICON_ID = 21788;
-	private static final int ELIDNIS_WARDEN_PET_ID = 27354;
-	private static final int TUMEKENS_WARDEN_PET_ID = 27352;
-	private static final int TOA_NEXUS_REGION_ID = 14160;
-	private static final int BABA_PUZZLE_ROOM_REGION_ID = 15186;
-	private static final int BABA_ROOM_REGION_ID = 15188;
-	private static final int KEPHRI_PUZZLE_ROOM_REGION_ID = 14162;
-	private static final int KEPHRI_ROOM_REGION_ID = 14164;
-	private static final int AKKHA_PUZZLE_ROOM_REGION_ID = 14674;
-	private static final int AKKHA_ROOM_REGION_ID = 14676;
-	private static final int ZEBAK_PUZZLE_ROOM_REGION_ID = 15698;
-	private static final int ZEBAK_ROOM_REGION_ID = 15700;
-	private static final int WARDENS_OBELISK_ROOM_REGION_ID = 15184;
-	private static final int WARDENS_P3_ROOM_REGION_ID = 15696;
-	private static final int TOA_LOOT_ROOM_REGION_ID = 14672;
-	private static final int TOA_LOBBY_REGION_ID = 13454;
-	private static final int ENERGY_SIPHON_PROJECTILE_ID = 2226;
-	private static final int CAMERA_VIEW_VARBIT_ID = 384;
+	public static final int KEPHRI_SHIELDED_HEALING_HITSPLAT_ID = HitsplatID.CYAN_UP;
+	public static final int WARDENS_P2_DAMAGE_ME_HITSPLAT_ID = HitsplatID.DAMAGE_ME_POISE;
+	public static final int WARDENS_P2_DAMAGE_OTHER_HITSPLAT_ID = HitsplatID.DAMAGE_OTHER_POISE;
+	public static final int WARDENS_P2_DAMAGE_MAX_ME_HITSPLAT_ID = HitsplatID.DAMAGE_MAX_ME_POISE;
+	public static final int PRECISE_TIMER = 11866;
+	public static final int TICK_LENGTH = 600;
+	public static final int BABA_PET_ID = 27383;
+	public static final int KEPHRI_PET_ID = 27384;
+	public static final int AKKHA_PET_ID = 27382;
+	public static final int ZEBAK_PET_ID = 27385;
+	public static final int OBELISK_ICON_ID = 21788;
+	public static final int ELIDNIS_WARDEN_PET_ID = 27354;
+	public static final int TUMEKENS_WARDEN_PET_ID = 27352;
+	public static final int TOA_NEXUS_REGION_ID = 14160;
+	public static final int BABA_PUZZLE_ROOM_REGION_ID = 15186;
+	public static final int BABA_ROOM_REGION_ID = 15188;
+	public static final int KEPHRI_PUZZLE_ROOM_REGION_ID = 14162;
+	public static final int KEPHRI_ROOM_REGION_ID = 14164;
+	public static final int AKKHA_PUZZLE_ROOM_REGION_ID = 14674;
+	public static final int AKKHA_ROOM_REGION_ID = 14676;
+	public static final int ZEBAK_PUZZLE_ROOM_REGION_ID = 15698;
+	public static final int ZEBAK_ROOM_REGION_ID = 15700;
+	public static final int WARDENS_OBELISK_ROOM_REGION_ID = 15184;
+	public static final int WARDENS_P3_ROOM_REGION_ID = 15696;
+	public static final int TOA_LOOT_ROOM_REGION_ID = 14672;
+	public static final int TOA_LOBBY_REGION_ID = 13454;
+	public static final int ENERGY_SIPHON_PROJECTILE_ID = 2226;
+	public static final int CAMERA_VIEW_VARBIT_ID = 384;
 
 	public static final Set<Integer> TOA_ROOM_IDS = Set.of(
 			TOA_NEXUS_REGION_ID,
