@@ -308,15 +308,17 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe(priority = 1) // run prior to plugins so that the member is joined by the time the plugins see it.
 	public void onUserJoin(final UserJoin message)
 	{
-		log.info("onUserJoin memberId = {}, partyId = {}", message.getMemberId(), message.getPartyId());
-		log.info("partyService getLocalMember() = {}, partyId = {}", partyService.getLocalMember().toString(), partyService.getPartyId());
+		//TODO remove logging
+//		log.info("onUserJoin memberId = {}, partyId = {}", message.getMemberId(), message.getPartyId());
+//		log.info("partyService getLocalMember() = {}, partyId = {}", partyService.getLocalMember().toString(), partyService.getPartyId());
 		sendInitialPartyMemberDamageStatsMessage();
 	}
 
 	@Subscribe(priority = 1) // run prior to plugins so that the member is joined by the time the plugins see it.
 	public void onUserPart(final UserPart message)
 	{
-		log.info("User {} with ID {} left the party.", partyService.getMemberById(message.getMemberId()).getDisplayName(), message.getMemberId());
+		//TODO remove logging
+//		log.info("User {} with ID {} left the party.", partyService.getMemberById(message.getMemberId()).getDisplayName(), message.getMemberId());
 		partyDamageOverlay.removePartyMember(message.getMemberId());
 	}
 
@@ -638,15 +640,24 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 	private void addPartyMemberDamageStatsToChat(List<String> messages)
 	{
-		if (partyService.isInParty() && config.printPartyDamageToChatToggle())
+		if (!partyService.isInParty() || !config.printPartyDamageToChatToggle())
 		{
-			partyDamageOverlay.getPartyMemberDamageStatsList().forEach(member ->
+			return;
+		}
+
+		for (PartyMemberDamageStats member: partyDamageOverlay.getPartyMemberDamageStatsList())
+		{
+			try
 			{
 				if (member.getMemberId() != partyService.getLocalMember().getMemberId())
 				{
 					messages.add(getStatsChatMessage(partyService.getMemberById(member.getMemberId()).getDisplayName() + " - ", DMG_FORMAT.format(member.getCurrentDamageDealt()) + " (" + DECIMAL_FORMAT.format(member.getPercentOfTotalDamageDealt()) + "%)"));
 				}
-			});
+			}
+			catch (Exception ignored)
+			{
+				//exceptions are ignored as this is operation non-critical
+			}
 		}
 	}
 

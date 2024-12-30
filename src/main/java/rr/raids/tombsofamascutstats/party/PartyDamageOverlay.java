@@ -99,19 +99,21 @@ public class PartyDamageOverlay extends OverlayPanel
     {
         for (PartyMemberDamageStats partyMemberDamageStats: partyMemberDamageStatsList)
         {
-            if (partyMemberDamageStats.getMemberId() == partyMemberDamageStatsUpdate.getMemberId())
+            if (partyMemberDamageStats.getMemberId() != partyMemberDamageStatsUpdate.getMemberId())
             {
-                if (partyMemberDamageStatsUpdate.getCurrentDamageDealt() != 0)
-                {
-                    partyMemberDamageStats.setCurrentDamageDealt(partyMemberDamageStatsUpdate.getCurrentDamageDealt());
-                }
-                if (partyMemberDamageStatsUpdate.getPercentOfTotalDamageDealt() != 0.0)
-                {
-                    partyMemberDamageStats.setPercentOfTotalDamageDealt(partyMemberDamageStatsUpdate.getPercentOfTotalDamageDealt());
-                }
-                partyMemberDamageStats.setCurrentlyInsideToA(partyMemberDamageStatsUpdate.isCurrentlyInsideToA());
-                return;
+                continue;
             }
+
+            if (partyMemberDamageStatsUpdate.getCurrentDamageDealt() != 0)
+            {
+                partyMemberDamageStats.setCurrentDamageDealt(partyMemberDamageStatsUpdate.getCurrentDamageDealt());
+            }
+            if (partyMemberDamageStatsUpdate.getPercentOfTotalDamageDealt() != 0.0)
+            {
+                partyMemberDamageStats.setPercentOfTotalDamageDealt(partyMemberDamageStatsUpdate.getPercentOfTotalDamageDealt());
+            }
+            partyMemberDamageStats.setCurrentlyInsideToA(partyMemberDamageStatsUpdate.isCurrentlyInsideToA());
+            return;
         }
         // if the update's memberId was not found, then add new player's stats to list
         partyMemberDamageStatsList.add(partyMemberDamageStatsUpdate);
