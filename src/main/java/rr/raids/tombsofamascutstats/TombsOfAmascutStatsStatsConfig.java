@@ -1,9 +1,6 @@
 package rr.raids.tombsofamascutstats;
 
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.*;
 
 @ConfigGroup("tombsofamascutstats")
 public interface TombsOfAmascutStatsStatsConfig extends Config
@@ -123,5 +120,45 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 	default boolean partyPluginOverlayToggle()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+			keyName = "printPartyDamageToChatToggle",
+			name = "Print Party Damage to Chat",
+			description = "If in a Party via Party plugin, toggles whether to print all party members' final damage contributions after a boss is defeated",
+			section = PARTY_PLUGIN_OVERLAY_SETTINGS,
+			position = 1
+	)
+	default boolean printPartyDamageToChatToggle()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "truncatePlayerNamesToggle",
+			name = "Truncate Player Names",
+			description = "Toggles whether or not to truncate player display names on the Party Damage Overlay",
+			section = PARTY_PLUGIN_OVERLAY_SETTINGS,
+			position = 2
+	)
+	default boolean truncatePlayerNamesToggle()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "maxPlayerNameLength",
+			name = "Truncated Name Length",
+			description = "When \"Truncate Player Names\" is enabled, this field determines how many characters of each player's names are displayed on the Party Damage Overlay",
+			section = PARTY_PLUGIN_OVERLAY_SETTINGS,
+			position = 3
+	)
+	@Range(
+			min = 1,
+			max = 12
+	)
+	default int maxDisplayNameLength()
+	{
+		return 3;
 	}
 }

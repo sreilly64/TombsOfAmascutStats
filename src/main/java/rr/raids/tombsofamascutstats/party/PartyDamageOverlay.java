@@ -68,11 +68,25 @@ public class PartyDamageOverlay extends OverlayPanel
         {
             if (partyService.getMemberById(member.getMemberId()) == null || !member.isCurrentlyInsideToA())
             {
-                continue;
+                continue; //do not render a player's stats on the overlay if the id is null or if the player is not currently inside of ToA
             }
+
             String memberDisplayName = partyService.getMemberById(member.getMemberId()).getDisplayName();
+            Color playerNameColor = Color.WHITE;
+
+            if (memberDisplayName.equalsIgnoreCase(partyService.getLocalMember().getDisplayName()))
+            {
+                playerNameColor = Color.GREEN;
+            }
+
+            if (config.truncatePlayerNamesToggle())
+            {
+                memberDisplayName = memberDisplayName.substring(0, Math.min(config.maxDisplayNameLength(), memberDisplayName.length()));
+            }
+
             panelComponent.getChildren().add(LineComponent.builder()
                     .left(rank +". " + memberDisplayName)
+                    .leftColor(playerNameColor)
                     .right(member.getCurrentDamageDealt() + " (" + TombsOfAmascutStatsPlugin.DECIMAL_FORMAT.format(member.getPercentOfTotalDamageDealt()) + "%)")
                     .build());
             rank++;
