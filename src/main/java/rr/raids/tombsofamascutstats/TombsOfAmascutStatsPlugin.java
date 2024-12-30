@@ -644,7 +644,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			{
 				if (member.getMemberId() != partyService.getLocalMember().getMemberId())
 				{
-					messages.add(getStatsChatMessage(partyService.getMemberById(member.getMemberId()) + " - ", DMG_FORMAT.format(member.getCurrentDamageDealt()) + " (" + DECIMAL_FORMAT.format(member.getPercentOfTotalDamageDealt()) + "%)"));
+					messages.add(getStatsChatMessage(partyService.getMemberById(member.getMemberId()).getDisplayName() + " - ", DMG_FORMAT.format(member.getCurrentDamageDealt()) + " (" + DECIMAL_FORMAT.format(member.getPercentOfTotalDamageDealt()) + "%)"));
 				}
 			});
 		}
