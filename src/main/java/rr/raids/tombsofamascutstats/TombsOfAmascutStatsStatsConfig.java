@@ -2,6 +2,8 @@ package rr.raids.tombsofamascutstats;
 
 import net.runelite.client.config.*;
 
+import java.awt.*;
+
 @ConfigGroup("tombsofamascutstats")
 public interface TombsOfAmascutStatsStatsConfig extends Config
 {
@@ -123,23 +125,11 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "printPartyDamageToChatToggle",
-			name = "Print Party Damage to Chat",
-			description = "If in a Party via Party plugin, toggles whether to print all party members' final damage contributions after a boss is defeated",
-			section = PARTY_PLUGIN_OVERLAY_SETTINGS,
-			position = 1
-	)
-	default boolean printPartyDamageToChatToggle()
-	{
-		return true;
-	}
-
-	@ConfigItem(
 			keyName = "truncatePlayerNamesToggle",
 			name = "Truncate Player Names",
 			description = "Toggles whether or not to truncate player display names on the Party Damage Overlay",
 			section = PARTY_PLUGIN_OVERLAY_SETTINGS,
-			position = 2
+			position = 1
 	)
 	default boolean truncatePlayerNamesToggle()
 	{
@@ -151,7 +141,7 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 			name = "Truncated Name Length",
 			description = "When \"Truncate Player Names\" is enabled, this field determines how many characters of each player's names are displayed on the Party Damage Overlay",
 			section = PARTY_PLUGIN_OVERLAY_SETTINGS,
-			position = 3
+			position = 2
 	)
 	@Range(
 			min = 1,
@@ -160,5 +150,29 @@ public interface TombsOfAmascutStatsStatsConfig extends Config
 	default int maxDisplayNameLength()
 	{
 		return 3;
+	}
+
+	@ConfigItem(
+			keyName = "selfNameColor",
+			name = "Self Name Color",
+			description = "Sets the color of your own name in the Party Damage Overlay",
+			section = PARTY_PLUGIN_OVERLAY_SETTINGS,
+			position = 3
+	)
+	default Color selfNameColor()
+	{
+		return Color.GREEN;
+	}
+
+	@ConfigItem(
+			keyName = "printPartyDamageToChatToggle",
+			name = "Print Party Damage to Chat",
+			description = "If in a Party via Party plugin, toggles whether to print all party members' final damage contributions after a boss is defeated",
+			section = PARTY_PLUGIN_OVERLAY_SETTINGS,
+			position = 4
+	)
+	default boolean printPartyDamageToChatToggle()
+	{
+		return true;
 	}
 }

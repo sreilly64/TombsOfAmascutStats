@@ -391,6 +391,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			if (config.chatboxDmg())
 			{
 				messages.add(getStatsChatMessage("Damage dealt to Ba-Ba - ", DMG_FORMAT.format(babaStats.getPersonalDamage().get(BABA)) + " (" + DECIMAL_FORMAT.format(babaStats.getPercentageOfDamageDealt(BABA)) + "%)"));
+				addPartyMemberDamageStatsToChat(messages);
 			}
 
 			String damage = babaStats.getInfoBoxBossDamageString();
@@ -432,6 +433,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				messages.add(getStatsChatMessage("Damage dealt to Kephri - ", DMG_FORMAT.format(kephriStats.getPersonalDamage().get(KEPHRI)) + " (" + DECIMAL_FORMAT.format(kephriStats.getPercentageOfDamageDealt(KEPHRI)) + "%)"));
 				messages.add(getStatsChatMessage("Damage dealt to Scarabs - ", DMG_FORMAT.format(kephriStats.getPersonalDamage().get(SCARABS)) + " (" + DECIMAL_FORMAT.format(kephriStats.getPercentageOfDamageDealt(SCARABS)) + "%)"));
 				messages.add(getStatsChatMessage("Total damage dealt - ", DMG_FORMAT.format(kephriStats.getTotalPersonalDamageDealt()) + " (" + DECIMAL_FORMAT.format(kephriStats.getTotalPercentageOfDamageDealt()) + "%)"));
+				addPartyMemberDamageStatsToChat(messages);
 			}
 
 			String damage = kephriStats.getInfoBoxBossDamageString();
@@ -471,6 +473,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				messages.add(getStatsChatMessage("Damage dealt to Akkha - ", DMG_FORMAT.format(akkhaStats.getPersonalDamage().get(AKKHA)) + " (" + DECIMAL_FORMAT.format(akkhaStats.getPercentageOfDamageDealt(AKKHA)) + "%)"));
 				messages.add(getStatsChatMessage("Damage dealt to Akkha's Shadows - ", DMG_FORMAT.format(akkhaStats.getPersonalDamage().get(AKKHAS_SHADOW)) + " (" + DECIMAL_FORMAT.format(akkhaStats.getPercentageOfDamageDealt(AKKHAS_SHADOW)) + "%)"));
 				messages.add(getStatsChatMessage("Total damage dealt - ", DMG_FORMAT.format(akkhaStats.getTotalPersonalDamageDealt()) + " (" + DECIMAL_FORMAT.format(akkhaStats.getTotalPercentageOfDamageDealt()) + "%)"));
+				addPartyMemberDamageStatsToChat(messages);
 			}
 
 			String damage = akkhaStats.getInfoBoxBossDamageString();
@@ -496,6 +499,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			if (config.chatboxDmg())
 			{
 				messages.add(getStatsChatMessage("Damage dealt to Zebak - ", DMG_FORMAT.format(zebakStats.getPersonalDamage().get(ZEBAK)) + " (" + DECIMAL_FORMAT.format(zebakStats.getPercentageOfDamageDealt(ZEBAK)) + "%)"));
+				addPartyMemberDamageStatsToChat(messages);
 			}
 
 			String damage = zebakStats.getInfoBoxBossDamageString();
@@ -522,6 +526,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			if (config.chatboxDmg())
 			{
 				messages.add(getStatsChatMessage("Damage dealt to Obelisk - ", DMG_FORMAT.format(obeliskStats.getPersonalDamage().get(OBELISK)) + " (" + DECIMAL_FORMAT.format(obeliskStats.getPercentageOfDamageDealt(OBELISK)) + "%)"));
+				addPartyMemberDamageStatsToChat(messages);
 			}
 
 			String damage = obeliskStats.getInfoBoxBossDamageString();
@@ -532,6 +537,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			obeliskStats.resetStats();
 
 			firstWardensStats.setStartTick(client.getTickCount());
+			partyDamageOverlay.resetPartyMemberDamageStats();
 		}
 		else if (WARDENS_P2_COMPLETE_ELIDINIS_SPAWNS.matcher(strippedMessage).find() || WARDENS_P2_COMPLETE_TUMEKEN_SPAWNS.matcher(strippedMessage).find())
 		{
@@ -559,6 +565,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				messages.add(getStatsChatMessage("Damage dealt to "+wardensName+" - ", DMG_FORMAT.format(firstWardensStats.getPersonalDamage().get(shieldedWardensName)) + " (" + DECIMAL_FORMAT.format(firstWardensStats.getPercentageOfDamageDealt(shieldedWardensName)) + "%)"));
 				messages.add(getStatsChatMessage("Damage dealt to Core - ", DMG_FORMAT.format(firstWardensStats.getPersonalDamage().get(CORE)) + " (" + DECIMAL_FORMAT.format(firstWardensStats.getPercentageOfDamageDealt(CORE)) + "%)"));
 				messages.add(getStatsChatMessage("Total damage dealt - ", DMG_FORMAT.format(firstWardensStats.getTotalPersonalDamageDealt()) + " (" + DECIMAL_FORMAT.format(firstWardensStats.getTotalPercentageOfDamageDealt()) + "%)"));
+				addPartyMemberDamageStatsToChat(messages);
 			}
 
 			String damage = firstWardensStats.getInfoBoxBossDamageString();
@@ -570,6 +577,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 			secondWardensStats.resetStats();
 			secondWardensStats.setStartTick(client.getTickCount());
+			partyDamageOverlay.resetPartyMemberDamageStats();
 		}
 		else if (WARDENS_COMPLETE.matcher(strippedMessage).find())
 		{
@@ -604,6 +612,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				messages.add(getStatsChatMessage("Start to Enrage damage dealt - ", DMG_FORMAT.format(secondWardensStats.getPreEnragePersonalDamage()) + " (" + DECIMAL_FORMAT.format(secondWardensStats.getPercentageOfPreEnragePhaseDamageDealt()) + "%)"));
 				messages.add(getStatsChatMessage("Enrage damage dealt - ", DMG_FORMAT.format(secondWardensStats.getEnragePhasePersonalDamageDealt()) + " (" + DECIMAL_FORMAT.format(secondWardensStats.getPercentageOfEnragePhaseDamageDealt()) + "%)"));
 				messages.add(getStatsChatMessage("Total damage dealt - ", DMG_FORMAT.format(secondWardensStats.getTotalPersonalDamageDealt()) + " (" + DECIMAL_FORMAT.format(secondWardensStats.getTotalPercentageOfDamageDealt()) + "%)"));
+				addPartyMemberDamageStatsToChat(messages);
 			}
 
 			String damage = secondWardensStats.getInfoBoxBossDamageString();
@@ -624,6 +633,20 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 					.build());
 			}
 			messages.clear();
+		}
+	}
+
+	private void addPartyMemberDamageStatsToChat(List<String> messages)
+	{
+		if (partyService.isInParty() && config.printPartyDamageToChatToggle())
+		{
+			partyDamageOverlay.getPartyMemberDamageStatsList().forEach(member ->
+			{
+				if (member.getMemberId() != partyService.getLocalMember().getMemberId())
+				{
+					messages.add(getStatsChatMessage(partyService.getMemberById(member.getMemberId()) + " - ", DMG_FORMAT.format(member.getCurrentDamageDealt()) + " (" + DECIMAL_FORMAT.format(member.getPercentOfTotalDamageDealt()) + "%)"));
+				}
+			});
 		}
 	}
 

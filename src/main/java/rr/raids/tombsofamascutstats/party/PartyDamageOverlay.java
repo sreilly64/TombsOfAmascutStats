@@ -72,12 +72,6 @@ public class PartyDamageOverlay extends OverlayPanel
             }
 
             String memberDisplayName = partyService.getMemberById(member.getMemberId()).getDisplayName();
-            Color playerNameColor = Color.WHITE;
-
-            if (memberDisplayName.equalsIgnoreCase(partyService.getLocalMember().getDisplayName()))
-            {
-                playerNameColor = Color.GREEN;
-            }
 
             if (config.truncatePlayerNamesToggle())
             {
@@ -86,7 +80,7 @@ public class PartyDamageOverlay extends OverlayPanel
 
             panelComponent.getChildren().add(LineComponent.builder()
                     .left(rank +". " + memberDisplayName)
-                    .leftColor(playerNameColor)
+                    .leftColor(config.selfNameColor())
                     .right(member.getCurrentDamageDealt() + " (" + TombsOfAmascutStatsPlugin.DECIMAL_FORMAT.format(member.getPercentOfTotalDamageDealt()) + "%)")
                     .build());
             rank++;

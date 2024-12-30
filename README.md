@@ -11,6 +11,10 @@ The plugin can be configured to provide these stats as Info Box icons and/or as 
 
 ![img.png](chatbox.png)
 
+### Party Damage Overlay:
+
+screenshot here
+
 ### Credits:
 
 The foundation and inspiration for this plugin is the [Theatre of Blood Stats](https://github.com/HSJ-OSRS/theatreofbloodstats) plugin by HSJ. Check it out as well!
