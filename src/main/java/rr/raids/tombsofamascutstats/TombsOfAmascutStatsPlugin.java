@@ -518,7 +518,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				return;
 			}
 
-			partyDamageOverlay.resetPartyMemberDamageStats();
 			messages.clear();
 
 			//calculate final phase time and total kill time
@@ -548,7 +547,6 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				return;
 			}
 
-			partyDamageOverlay.resetPartyMemberDamageStats();
 			messages.clear();
 
 			//calculate final phase time and total kill time
