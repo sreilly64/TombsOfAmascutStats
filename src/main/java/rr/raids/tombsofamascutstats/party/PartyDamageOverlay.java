@@ -97,22 +97,22 @@ public class PartyDamageOverlay extends OverlayPanel
 
     public void updatePartyMemberDamageStats(PartyMemberDamageStats partyMemberDamageStatsUpdate)
     {
-        for (PartyMemberDamageStats partyMemberDamageStats: partyMemberDamageStatsList)
+        for (PartyMemberDamageStats member: partyMemberDamageStatsList)
         {
-            if (partyMemberDamageStats.getMemberId() != partyMemberDamageStatsUpdate.getMemberId())
+            if (member.getMemberId() != partyMemberDamageStatsUpdate.getMemberId())
             {
                 continue;
             }
 
             if (partyMemberDamageStatsUpdate.getCurrentDamageDealt() != 0)
             {
-                partyMemberDamageStats.setCurrentDamageDealt(partyMemberDamageStatsUpdate.getCurrentDamageDealt());
+                member.setCurrentDamageDealt(partyMemberDamageStatsUpdate.getCurrentDamageDealt());
             }
             if (partyMemberDamageStatsUpdate.getPercentOfTotalDamageDealt() != 0.0)
             {
-                partyMemberDamageStats.setPercentOfTotalDamageDealt(partyMemberDamageStatsUpdate.getPercentOfTotalDamageDealt());
+                member.setPercentOfTotalDamageDealt(partyMemberDamageStatsUpdate.getPercentOfTotalDamageDealt());
             }
-            partyMemberDamageStats.setCurrentlyInsideToA(partyMemberDamageStatsUpdate.isCurrentlyInsideToA());
+            member.setCurrentlyInsideToA(partyMemberDamageStatsUpdate.isCurrentlyInsideToA());
             return;
         }
         // if the update's memberId was not found, then add new player's stats to list

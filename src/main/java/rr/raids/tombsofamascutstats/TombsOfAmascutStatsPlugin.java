@@ -27,9 +27,11 @@ package rr.raids.tombsofamascutstats;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.gameval.NpcID;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
@@ -235,6 +237,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	{
 		resetAllStats();
 		resetAllInfoBoxes();
+		//TODO remove self from other party member's overlay?
 		overlayManager.remove(partyDamageOverlay);
 		wsClient.unregisterMessage(PartyMemberDamageStats.class);
 	}
@@ -244,6 +247,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	{
 		clientThread.invoke(() ->
 		{
+			//TODO remove logging
 			log.info("PartyMemberDamageStats received with memberId = {}, current damage = {}, and percentage = {}",
 					partyMemberDamageStatsUpdate.getMemberId(),
 					partyMemberDamageStatsUpdate.getCurrentDamageDealt(),
@@ -279,12 +283,17 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		if (updatedCurrentlyInsideToA != currentlyInsideToA)
 		{
-			currentlyInsideToA = updatedCurrentlyInsideToA;
+			//TODO remove or debug
 			log.info("currentlyInsideToA updated to: {}", currentlyInsideToA);
-			partyDamageOverlay.setCurrentlyInsideToA(currentlyInsideToA);
-			sendInitialPartyMemberDamageStatsMessage();
 
-			if (!currentlyInsideToA)
+			currentlyInsideToA = updatedCurrentlyInsideToA;
+			partyDamageOverlay.setCurrentlyInsideToA(currentlyInsideToA);
+
+			if (currentlyInsideToA)
+			{
+				sendInitialPartyMemberDamageStatsMessage();
+			}
+			else
 			{
 				resetAllStats();
 				resetAllInfoBoxes();
@@ -654,7 +663,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 			}
 			catch (Exception ignored)
 			{
-				//exceptions are ignored as this is operation non-critical
+				//exceptions are ignored as this operation is non-critical
 			}
 		}
 	}
@@ -673,7 +682,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		switch (npcId)
 		{
-			case NpcID.BABA_11780: //Ba-Ba leaps to the top of the room and starts throwing boulders
+			case NpcID.TOA_BABA_DIGGING: //Ba-Ba leaps to the top of the room and starts throwing boulders
 				if (StringUtils.isEmpty(babaStats.getPhaseCompletionTimes().get(BabaPhase.PHASE_1))) //if a time for phase 1 has not yet been recorded
 				{
 					babaStats.getPhaseCompletionTimes().put(BabaPhase.PHASE_1, formatTime(currentTick - babaStats.getStartTick()));
@@ -684,15 +693,15 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 				babaStats.setPreviousPhaseEndTick(currentTick);
 				break;
-			case NpcID.BABA: //end of first boulder phase
+			case NpcID.TOA_BABA: //end of first boulder phase
 				babaStats.getPhaseCompletionTimes().put(BabaPhase.BOULDERS_1, formatTime(currentTick - babaStats.getPreviousPhaseEndTick()));
 				babaStats.setPreviousPhaseEndTick(currentTick);
 				break;
-			case NpcID.BABA_11779: //end of second boulder phase
+			case NpcID.TOA_BABA_COFFIN: //end of second boulder phase
 				babaStats.getPhaseCompletionTimes().put(BabaPhase.BOULDERS_2, formatTime(currentTick - babaStats.getPreviousPhaseEndTick()));
 				babaStats.setPreviousPhaseEndTick(currentTick);
 				break;
-			case NpcID.KEPHRI_11720: //Kephri's shield is depleted and Scarab Swarm phase starts
+			case NpcID.TOA_KEPHRI_BOSS_WEAK: //Kephri's shield is depleted and Scarab Swarm phase starts
 				if (kephriStats.isFirstShieldDown())
 				{
 					kephriStats.getPhaseCompletionTimes().put(KephriPhase.SHIELD_1, formatTime(currentTick - kephriStats.getStartTick()));
@@ -703,7 +712,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 				kephriStats.setPreviousPhaseEndTick(currentTick);
 				break;
-			case NpcID.KEPHRI: //Kephri starts attacking again after regaining her shield
+			case NpcID.TOA_KEPHRI_BOSS_SHIELDED: //Kephri starts attacking again after regaining her shield
 				if (kephriStats.isFirstShieldDown())
 				{
 					kephriStats.setFirstShieldDownHealing(kephriStats.getShieldTotalHealing());
@@ -711,11 +720,11 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				}
 				kephriStats.setPreviousPhaseEndTick(currentTick);
 				break;
-			case NpcID.KEPHRI_11721: //Kephri's green health bar becomes exposed
+			case NpcID.TOA_KEPHRI_BOSS_ENRAGE: //Kephri's green health bar becomes exposed
 				kephriStats.getPhaseCompletionTimes().put(KephriPhase.SHIELD_3, formatTime(currentTick - kephriStats.getPreviousPhaseEndTick()));
 				kephriStats.setPreviousPhaseEndTick(currentTick);
 				break;
-			case NpcID.AKKHA_11795: //Enrage phase Akkha
+			case NpcID.AKKHA_ENRAGE: //Enrage phase Akkha
 				akkhaStats.getPhaseCompletionTimes().put(AkkhaPhase.TWENTY_TO_ENRAGE, formatTime(currentTick - akkhaStats.getPreviousPhaseEndTick()));
 				akkhaStats.setPreviousPhaseEndTick(currentTick);
 				break;
@@ -734,7 +743,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		NPC npc = event.getNpc();
 
-		if (npc.getId() != NpcID.AKKHAS_SHADOW)
+		if (npc.getId() != NpcID.AKKHA_SHADOW) //currently onNpcSpawned is only used for determining Akkha phase times
 		{
 			return;
 		}
@@ -776,7 +785,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		NPC npc = event.getNpc();
 
-		if (npc.getId() != NpcID.AKKHAS_SHADOW)
+		if (npc.getId() != NpcID.AKKHA_SHADOW)
 		{
 			return;
 		}
@@ -904,25 +913,22 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 				secondWardensStats.setEnergySiphonsKilled(false);
 			}
 		}
-		else if (hitsplat.getHitsplatType() == HitsplatID.HEAL)
+		else if (hitsplat.getHitsplatType() == HitsplatID.HEAL && isAWarden(npcName))
 		{
-			if (isAWarden(npcName))
+			if (secondWardensStats.isWardensEnrageHeal()) //the Wardens heal twice, once at the very start of Phase 3 and once when they enter enrage phase/phase 4
 			{
-				if (secondWardensStats.isWardensEnrageHeal()) //the Wardens heal twice, once at the very start of Phase 3 and once when they enter enrage phase/phase 4
-				{
-					//on the second heal, record time and damage up to that point
-					int currentTick = client.getTickCount();
-					secondWardensStats.getPhaseCompletionTimes().put(SecondWardensPhase.START_TO_ENRAGE, formatTime(currentTick - secondWardensStats.getStartTick()));
-					secondWardensStats.setPreviousPhaseEndTick(currentTick);
-					secondWardensStats.setPreEnragePersonalDamage(secondWardensStats.getPersonalDamage().get(npcName));
-					secondWardensStats.setPreEnrageTotalDamage(secondWardensStats.getTotalDamage().get(npcName));
-					secondWardensStats.setWardensEnrageHeal(false);
-				}
-				else
-				{
-					//set enrage heal flag to true as the next heal that Wardens receives will be from the start of enrage
-					secondWardensStats.setWardensEnrageHeal(true);
-				}
+				//on the second heal, record time and damage up to that point
+				int currentTick = client.getTickCount();
+				secondWardensStats.getPhaseCompletionTimes().put(SecondWardensPhase.START_TO_ENRAGE, formatTime(currentTick - secondWardensStats.getStartTick()));
+				secondWardensStats.setPreviousPhaseEndTick(currentTick);
+				secondWardensStats.setPreEnragePersonalDamage(secondWardensStats.getPersonalDamage().get(npcName));
+				secondWardensStats.setPreEnrageTotalDamage(secondWardensStats.getTotalDamage().get(npcName));
+				secondWardensStats.setWardensEnrageHeal(false);
+			}
+			else
+			{
+				//set enrage heal flag to true as the next heal that Wardens receives will be from the start of enrage
+				secondWardensStats.setWardensEnrageHeal(true);
 			}
 		}
 		else if (hitsplat.getHitsplatType() == KEPHRI_SHIELDED_HEALING_HITSPLAT_ID && npcName.equals(KEPHRI)) //Hitsplat ID is shared with Palm of Resourcefulness
