@@ -1,4 +1,4 @@
-package rr.raids.tombsofamascutstats.party;
+package com.rr.raids.tombsofamascutstats.party;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

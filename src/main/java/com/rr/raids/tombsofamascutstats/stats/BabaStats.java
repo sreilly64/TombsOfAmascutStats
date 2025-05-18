@@ -1,13 +1,13 @@
-package rr.raids.tombsofamascutstats.stats;
+package com.rr.raids.tombsofamascutstats.stats;
 
 import lombok.Getter;
 import lombok.Setter;
-import rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
+import com.rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.BABA;
-import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.DMG_FORMAT;
+import static com.rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.BABA;
+import static com.rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.DMG_FORMAT;
 
 @Getter
 @Setter

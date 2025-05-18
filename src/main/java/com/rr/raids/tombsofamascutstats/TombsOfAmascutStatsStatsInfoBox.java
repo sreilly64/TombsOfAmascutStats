@@ -1,4 +1,4 @@
-package rr.raids.tombsofamascutstats;
+package com.rr.raids.tombsofamascutstats;
 
 import lombok.Getter;
 import net.runelite.client.ui.overlay.infobox.InfoBox;

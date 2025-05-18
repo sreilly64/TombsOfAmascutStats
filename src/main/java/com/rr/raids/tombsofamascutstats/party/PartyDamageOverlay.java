@@ -1,7 +1,8 @@
-package rr.raids.tombsofamascutstats.party;
+package com.rr.raids.tombsofamascutstats.party;
 
 import javax.inject.Inject;
 
+import com.rr.raids.tombsofamascutstats.TombsOfAmascutStatsStatsConfig;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -9,8 +10,7 @@ import net.runelite.client.party.PartyService;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
-import rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin;
-import rr.raids.tombsofamascutstats.TombsOfAmascutStatsStatsConfig;
+import com.rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin;
 
 import java.awt.*;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package rr.raids.tombsofamascutstats.stats;
+package com.rr.raids.tombsofamascutstats.stats;
 
 import lombok.Getter;
 import lombok.Setter;

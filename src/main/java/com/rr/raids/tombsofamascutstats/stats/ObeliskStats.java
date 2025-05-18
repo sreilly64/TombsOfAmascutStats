@@ -1,9 +1,9 @@
-package rr.raids.tombsofamascutstats.stats;
+package com.rr.raids.tombsofamascutstats.stats;
 
 import lombok.Getter;
 import lombok.Setter;
 
-import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.*;
+import static com.rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.*;
 
 @Getter
 @Setter

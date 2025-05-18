@@ -22,16 +22,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package rr.raids.tombsofamascutstats;
+package com.rr.raids.tombsofamascutstats;
 
 import com.google.inject.Provides;
+import com.rr.raids.tombsofamascutstats.party.PartyDamageOverlay;
+import com.rr.raids.tombsofamascutstats.stats.*;
+import com.rr.raids.tombsofamascutstats.stats.phases.AkkhaPhase;
+import com.rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
+import com.rr.raids.tombsofamascutstats.stats.phases.KephriPhase;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.gameval.NpcID;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
@@ -50,13 +54,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.Text;
 import org.apache.commons.lang3.StringUtils;
-import rr.raids.tombsofamascutstats.party.PartyDamageOverlay;
-import rr.raids.tombsofamascutstats.party.PartyMemberDamageStats;
-import rr.raids.tombsofamascutstats.stats.*;
-import rr.raids.tombsofamascutstats.stats.phases.AkkhaPhase;
-import rr.raids.tombsofamascutstats.stats.phases.BabaPhase;
-import rr.raids.tombsofamascutstats.stats.phases.KephriPhase;
-import rr.raids.tombsofamascutstats.stats.phases.SecondWardensPhase;
+import com.rr.raids.tombsofamascutstats.party.PartyMemberDamageStats;
+import com.rr.raids.tombsofamascutstats.stats.phases.SecondWardensPhase;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -160,7 +159,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	public static final int TOA_LOOT_ROOM_REGION_ID = 14672;
 	public static final int TOA_LOBBY_REGION_ID = 13454;
 	public static final int ENERGY_SIPHON_PROJECTILE_ID = 2226;
-	public static final int CAMERA_VIEW_VARBIT_ID = 384;
+	public static final int VAR_CLIENT_INT_CAMERA_LOAD_ID = 384;
 
 	public static final Set<Integer> TOA_ROOM_IDS = Set.of(
 			TOA_NEXUS_REGION_ID,
@@ -247,8 +246,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	{
 		clientThread.invoke(() ->
 		{
-			//TODO remove logging
-			log.info("PartyMemberDamageStats received with memberId = {}, current damage = {}, and percentage = {}",
+			log.debug("PartyMemberDamageStats received with memberId = {}, current damage = {}, and percentage = {}",
 					partyMemberDamageStatsUpdate.getMemberId(),
 					partyMemberDamageStatsUpdate.getCurrentDamageDealt(),
 					partyMemberDamageStatsUpdate.getPercentOfTotalDamageDealt());
@@ -260,7 +258,7 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe
 	public void onVarClientIntChanged(VarClientIntChanged event)
 	{
-		if (event.getIndex() != CAMERA_VIEW_VARBIT_ID)
+		if (event.getIndex() != VAR_CLIENT_INT_CAMERA_LOAD_ID)
 		{
 			return;
 		}
@@ -283,10 +281,9 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 
 		if (updatedCurrentlyInsideToA != currentlyInsideToA)
 		{
-			//TODO remove or debug
-			log.info("currentlyInsideToA updated to: {}", currentlyInsideToA);
-
 			currentlyInsideToA = updatedCurrentlyInsideToA;
+			log.debug("currentlyInsideToA updated to: {}", currentlyInsideToA);
+
 			partyDamageOverlay.setCurrentlyInsideToA(currentlyInsideToA);
 
 			if (currentlyInsideToA)
@@ -317,17 +314,12 @@ public class TombsOfAmascutStatsPlugin extends Plugin
 	@Subscribe(priority = 1) // run prior to plugins so that the member is joined by the time the plugins see it.
 	public void onUserJoin(final UserJoin message)
 	{
-		//TODO remove logging
-//		log.info("onUserJoin memberId = {}, partyId = {}", message.getMemberId(), message.getPartyId());
-//		log.info("partyService getLocalMember() = {}, partyId = {}", partyService.getLocalMember().toString(), partyService.getPartyId());
 		sendInitialPartyMemberDamageStatsMessage();
 	}
 
 	@Subscribe(priority = 1) // run prior to plugins so that the member is joined by the time the plugins see it.
 	public void onUserPart(final UserPart message)
 	{
-		//TODO remove logging
-//		log.info("User {} with ID {} left the party.", partyService.getMemberById(message.getMemberId()).getDisplayName(), message.getMemberId());
 		partyDamageOverlay.removePartyMember(message.getMemberId());
 	}
 

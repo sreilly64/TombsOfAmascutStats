@@ -1,4 +1,4 @@
-package rr.raids.tombsofamascutstats;
+package com.rr.raids.tombsofamascutstats;
 
 import net.runelite.client.config.*;
 

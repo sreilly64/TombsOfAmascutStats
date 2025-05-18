@@ -1,4 +1,4 @@
-package rr.raids.tombsofamascutstats.stats.phases;
+package com.rr.raids.tombsofamascutstats.stats.phases;
 
 public enum KephriPhase
 {

@@ -1,12 +1,12 @@
-package rr.raids.tombsofamascutstats.stats;
+package com.rr.raids.tombsofamascutstats.stats;
 
+import com.rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin;
+import com.rr.raids.tombsofamascutstats.stats.phases.KephriPhase;
 import lombok.Getter;
 import lombok.Setter;
-import rr.raids.tombsofamascutstats.stats.phases.KephriPhase;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.*;
 
 @Getter
 @Setter
@@ -39,19 +39,19 @@ public class KephriStats extends BossStats
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("</br>Boss Healing:")
                 .append("</br>First down healed - ")
-                .append(DMG_FORMAT.format(firstShieldDownHealing))
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(firstShieldDownHealing))
                 .append("</br>Second down healed - ")
-                .append(DMG_FORMAT.format(getSecondShieldDownHealing()))
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(getSecondShieldDownHealing()))
                 .append("</br>Total shield healed - ")
-                .append(DMG_FORMAT.format(shieldTotalHealing));
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(shieldTotalHealing));
         return stringBuilder.toString();
     }
 
     @Override
     void initializeSetOfEnemyNames()
     {
-        getEnemyNames().add(KEPHRI);
-        getEnemyNames().add(SCARABS);
+        getEnemyNames().add(TombsOfAmascutStatsPlugin.KEPHRI);
+        getEnemyNames().add(TombsOfAmascutStatsPlugin.SCARABS);
     }
 
     @Override
@@ -100,12 +100,12 @@ public class KephriStats extends BossStats
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("</br>Damage Dealt:")
                 .append("</br>Kephri - ")
-                .append(DMG_FORMAT.format(getPersonalDamage().get(KEPHRI)))
-                .append(" (").append(DECIMAL_FORMAT.format(getPercentageOfDamageDealt(KEPHRI))).append("%)")
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(getPersonalDamage().get(TombsOfAmascutStatsPlugin.KEPHRI)))
+                .append(" (").append(TombsOfAmascutStatsPlugin.DECIMAL_FORMAT.format(getPercentageOfDamageDealt(TombsOfAmascutStatsPlugin.KEPHRI))).append("%)")
                 .append("</br>Scarabs - ")
-                .append(DMG_FORMAT.format(getPersonalDamage().get(SCARABS))).append(" (").append(DECIMAL_FORMAT.format(getPercentageOfDamageDealt(SCARABS))).append("%)")
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(getPersonalDamage().get(TombsOfAmascutStatsPlugin.SCARABS))).append(" (").append(TombsOfAmascutStatsPlugin.DECIMAL_FORMAT.format(getPercentageOfDamageDealt(TombsOfAmascutStatsPlugin.SCARABS))).append("%)")
                 .append("</br>Total Damage - ")
-                .append(DMG_FORMAT.format(getTotalPersonalDamageDealt()));
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(getTotalPersonalDamageDealt()));
         return stringBuilder.toString();
     }
 }

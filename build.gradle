@@ -23,7 +23,7 @@ dependencies {
     testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'rr.raids.tombsofamascutstats'
+group = 'com.rr.raids.tombsofamascutstats'
 version = '1.1.0'
 sourceCompatibility = '11'
 

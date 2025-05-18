@@ -1,13 +1,12 @@
-package rr.raids.tombsofamascutstats.stats;
+package com.rr.raids.tombsofamascutstats.stats;
 
+import com.rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.coords.LocalPoint;
-import rr.raids.tombsofamascutstats.stats.phases.SecondWardensPhase;
+import com.rr.raids.tombsofamascutstats.stats.phases.SecondWardensPhase;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import static rr.raids.tombsofamascutstats.TombsOfAmascutStatsPlugin.*;
 
 @Getter
 @Setter
@@ -41,13 +40,13 @@ public class SecondWardensStats extends BossStats
 
     public int getEnragePhasePersonalDamageDealt()
     {
-        String wardensName = isElidnisWardenFought() ? ELIDINIS_WARDEN : TUMEKENS_WARDEN;
+        String wardensName = isElidnisWardenFought() ? TombsOfAmascutStatsPlugin.ELIDINIS_WARDEN : TombsOfAmascutStatsPlugin.TUMEKENS_WARDEN;
         return getPersonalDamage().get(wardensName) - preEnragePersonalDamage;
     }
 
     public int getEnragePhaseTotalDamageDealt()
     {
-        String wardensName = isElidnisWardenFought() ? ELIDINIS_WARDEN : TUMEKENS_WARDEN;
+        String wardensName = isElidnisWardenFought() ? TombsOfAmascutStatsPlugin.ELIDINIS_WARDEN : TombsOfAmascutStatsPlugin.TUMEKENS_WARDEN;
         return getTotalDamage().get(wardensName) - preEnrageTotalDamage;
     }
 
@@ -69,8 +68,8 @@ public class SecondWardensStats extends BossStats
     @Override
     void initializeSetOfEnemyNames()
     {
-        getEnemyNames().add(ELIDINIS_WARDEN);
-        getEnemyNames().add(TUMEKENS_WARDEN);
+        getEnemyNames().add(TombsOfAmascutStatsPlugin.ELIDINIS_WARDEN);
+        getEnemyNames().add(TombsOfAmascutStatsPlugin.TUMEKENS_WARDEN);
     }
 
     @Override
@@ -123,16 +122,16 @@ public class SecondWardensStats extends BossStats
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("</br>Damage Dealt:")
                 .append("</br>Energy Siphon damage - ")
-                .append(DMG_FORMAT.format(energySiphonBossDamage))
-                .append(" (").append(DECIMAL_FORMAT.format(getPercentageOfEnergySiphonDamage())).append("%)")
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(energySiphonBossDamage))
+                .append(" (").append(TombsOfAmascutStatsPlugin.DECIMAL_FORMAT.format(getPercentageOfEnergySiphonDamage())).append("%)")
                 .append("</br>P3 start to Enrage - ")
-                .append(DMG_FORMAT.format(preEnragePersonalDamage))
-                .append(" (").append(DECIMAL_FORMAT.format(getPercentageOfPreEnragePhaseDamageDealt())).append("%)")
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(preEnragePersonalDamage))
+                .append(" (").append(TombsOfAmascutStatsPlugin.DECIMAL_FORMAT.format(getPercentageOfPreEnragePhaseDamageDealt())).append("%)")
                 .append("</br>Enrage to kill - ")
-                .append(DMG_FORMAT.format(getEnragePhasePersonalDamageDealt()))
-                .append(" (").append(DECIMAL_FORMAT.format(getPercentageOfEnragePhaseDamageDealt())).append("%)")
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(getEnragePhasePersonalDamageDealt()))
+                .append(" (").append(TombsOfAmascutStatsPlugin.DECIMAL_FORMAT.format(getPercentageOfEnragePhaseDamageDealt())).append("%)")
                 .append("</br>Total Damage - ")
-                .append(DMG_FORMAT.format(getTotalPersonalDamageDealt()));
+                .append(TombsOfAmascutStatsPlugin.DMG_FORMAT.format(getTotalPersonalDamageDealt()));
         return stringBuilder.toString();
     }
 }
